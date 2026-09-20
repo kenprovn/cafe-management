@@ -1,666 +1,286 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import ProductModal from "./components/common/ProductModal";
+import { ErrorState, LoadingState } from "./components/common/StateMessage";
+import Header from "./components/layout/Header";
+import Sidebar from "./components/layout/Sidebar";
+import DashboardPage from "./pages/DashboardPage";
+import LoginPage from "./pages/LoginPage";
+import OrderPage from "./pages/OrderPage";
+import ProductsPage from "./pages/ProductsPage";
+import TablesPage from "./pages/TablesPage";
+import { completeOrder, createOrder, getActiveOrder, updateOrder } from "./services/api";
 
 const PRODUCT_API = "http://localhost:5000/api/products";
 const TABLE_API = "http://localhost:5000/api/tables";
 const LOGIN_API = "http://localhost:5000/api/login";
 
+const PAGE_DETAILS = {
+  dashboard: { title: "Tổng quan", subtitle: "Theo dõi hoạt động của quán hôm nay" },
+  tables: { title: "Quản lý bàn", subtitle: "Theo dõi và cập nhật trạng thái phục vụ" },
+  products: { title: "Quản lý món", subtitle: "Quản lý thực đơn và giá bán tại quán" },
+  order: { title: "Gọi món", subtitle: "Tạo và cập nhật đơn hàng tại bàn" },
+};
+
 function App() {
-  // =========================
-  // STATE
-  // =========================
   const [products, setProducts] = useState([]);
   const [tables, setTables] = useState([]);
   const [currentPage, setCurrentPage] = useState("dashboard");
-
   const [user, setUser] = useState(null);
-
-  const [loginData, setLoginData] = useState({
-    username: "",
-    password: "",
-  });
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [tablesLoading, setTablesLoading] = useState(true);
+  const [productsError, setProductsError] = useState("");
+  const [tablesError, setTablesError] = useState("");
+  const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState("");
-
+  const [loginLoading, setLoginLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [formData, setFormData] = useState({ name: "", price: "" });
+  const [formError, setFormError] = useState("");
+  const [formLoading, setFormLoading] = useState(false);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [activeOrder, setActiveOrder] = useState(null);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderError, setOrderError] = useState("");
+  const [tablesNotice, setTablesNotice] = useState("");
 
-  const [formData, setFormData] = useState({
-    name: "",
-    price: "",
-  });
-
-  // =========================
-  // LẤY DANH SÁCH MÓN
-  // =========================
   const fetchProducts = async () => {
+    setProductsLoading(true);
+    setProductsError("");
     try {
       const response = await fetch(PRODUCT_API);
-
-      if (!response.ok) {
-        throw new Error("Không thể lấy danh sách món");
-      }
-
-      const data = await response.json();
-      setProducts(data);
+      if (!response.ok) throw new Error("Không thể lấy danh sách món");
+      setProducts(await response.json());
     } catch (error) {
       console.error("Lỗi lấy sản phẩm:", error);
+      setProductsError("Không thể tải danh sách món. Vui lòng kiểm tra máy chủ.");
+    } finally {
+      setProductsLoading(false);
     }
   };
 
-  // =========================
-  // LẤY DANH SÁCH BÀN
-  // =========================
   const fetchTables = async () => {
+    setTablesLoading(true);
+    setTablesError("");
     try {
       const response = await fetch(TABLE_API);
-
-      if (!response.ok) {
-        throw new Error("Không thể lấy danh sách bàn");
-      }
-
-      const data = await response.json();
-      setTables(data);
+      if (!response.ok) throw new Error("Không thể lấy danh sách bàn");
+      setTables(await response.json());
     } catch (error) {
       console.error("Lỗi lấy danh sách bàn:", error);
+      setTablesError("Không thể tải danh sách bàn. Vui lòng kiểm tra máy chủ.");
+    } finally {
+      setTablesLoading(false);
     }
   };
 
-  // =========================
-  // LOAD DỮ LIỆU
-  // =========================
   useEffect(() => {
-    fetchProducts();
-    fetchTables();
+    const loadInitialData = async () => {
+      const [productResult, tableResult] = await Promise.allSettled([
+        fetch(PRODUCT_API).then((response) => {
+          if (!response.ok) throw new Error("Không thể lấy danh sách món");
+          return response.json();
+        }),
+        fetch(TABLE_API).then((response) => {
+          if (!response.ok) throw new Error("Không thể lấy danh sách bàn");
+          return response.json();
+        }),
+      ]);
+
+      if (productResult.status === "fulfilled") {
+        setProducts(productResult.value);
+      } else {
+        console.error("Lỗi lấy sản phẩm:", productResult.reason);
+        setProductsError("Không thể tải danh sách món. Vui lòng kiểm tra máy chủ.");
+      }
+
+      if (tableResult.status === "fulfilled") {
+        setTables(tableResult.value);
+      } else {
+        console.error("Lỗi lấy danh sách bàn:", tableResult.reason);
+        setTablesError("Không thể tải danh sách bàn. Vui lòng kiểm tra máy chủ.");
+      }
+
+      setProductsLoading(false);
+      setTablesLoading(false);
+    };
+
+    loadInitialData();
   }, []);
 
-  // =========================
-  // XỬ LÝ INPUT MÓN
-  // =========================
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const navigateTo = (page) => {
+    setCurrentPage(page);
+    setSidebarOpen(false);
   };
 
-  // =========================
-  // THÊM MÓN
-  // =========================
   const handleAdd = () => {
     setEditingId(null);
-
-    setFormData({
-      name: "",
-      price: "",
-    });
-
+    setFormData({ name: "", price: "" });
+    setFormError("");
     setShowForm(true);
   };
 
-  // =========================
-  // SỬA MÓN
-  // =========================
   const handleEdit = (product) => {
     setEditingId(product.id);
-
-    setFormData({
-      name: product.name,
-      price: product.price,
-    });
-
+    setFormData({ name: product.name, price: product.price });
+    setFormError("");
     setShowForm(true);
   };
 
-  // =========================
-  // THÊM / SỬA MÓN
-  // =========================
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const closeForm = () => {
+    if (formLoading) return;
+    setShowForm(false);
+    setFormError("");
+  };
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setFormError("");
     if (!formData.name.trim() || formData.price === "") {
-      alert("Vui lòng nhập đầy đủ thông tin!");
+      setFormError("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
-
     const price = Number(formData.price);
-
     if (Number.isNaN(price) || price < 0) {
-      alert("Giá không hợp lệ!");
+      setFormError("Giá món không hợp lệ.");
       return;
     }
 
+    setFormLoading(true);
     try {
-      let response;
-
-      if (editingId !== null) {
-        response = await fetch(`${PRODUCT_API}/${editingId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: formData.name.trim(),
-            price: price,
-          }),
-        });
-      } else {
-        response = await fetch(PRODUCT_API, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: formData.name.trim(),
-            price: price,
-          }),
-        });
-      }
-
+      const isEditing = editingId !== null;
+      const response = await fetch(isEditing ? `${PRODUCT_API}/${editingId}` : PRODUCT_API, {
+        method: isEditing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: formData.name.trim(), price }),
+      });
       const result = await response.json();
-
       if (!response.ok) {
-        alert(result.message || "Có lỗi xảy ra!");
+        setFormError(result.message || "Có lỗi xảy ra. Vui lòng thử lại.");
         return;
       }
-
-      alert(
-        editingId !== null
-          ? "Cập nhật món thành công!"
-          : "Thêm món thành công!",
-      );
-
       setShowForm(false);
       setEditingId(null);
-
-      setFormData({
-        name: "",
-        price: "",
-      });
-
-      fetchProducts();
+      setFormData({ name: "", price: "" });
+      await fetchProducts();
     } catch (error) {
       console.error("Lỗi:", error);
-      alert("Không thể kết nối tới server!");
+      setFormError("Không thể kết nối tới máy chủ.");
+    } finally {
+      setFormLoading(false);
     }
   };
 
-  // =========================
-  // XÓA MÓN
-  // =========================
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm("Bạn có chắc muốn xóa món này không?");
-
-    if (!confirmDelete) {
-      return;
-    }
-
+    if (!window.confirm("Bạn có chắc muốn xóa món này không?")) return;
     try {
-      const response = await fetch(`${PRODUCT_API}/${id}`, {
-        method: "DELETE",
-      });
-
+      const response = await fetch(`${PRODUCT_API}/${id}`, { method: "DELETE" });
       const result = await response.json();
-
       if (!response.ok) {
         alert(result.message || "Xóa thất bại!");
         return;
       }
-
-      alert("Xóa món thành công!");
-
-      fetchProducts();
+      await fetchProducts();
     } catch (error) {
       console.error("Lỗi:", error);
       alert("Không thể kết nối tới server!");
     }
   };
 
-  // =========================
-  // ĐỔI TRẠNG THÁI BÀN
-  // =========================
-  const handleToggleTable = async (table) => {
-    const newStatus = table.status === "Trống" ? "Đang sử dụng" : "Trống";
+  const handleOpenTable = async (table) => {
+    setSelectedTable(table);
+    setActiveOrder(null);
+    setOrderError("");
+    setTablesNotice("");
+    setCurrentPage("order");
+    setSidebarOpen(false);
 
+    if (table.status === "Trống") return;
+
+    setOrderLoading(true);
     try {
-      const response = await fetch(`${TABLE_API}/${table.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: newStatus,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        alert(result.message || "Không thể cập nhật bàn!");
-        return;
-      }
-
-      fetchTables();
+      const result = await getActiveOrder(table.id);
+      setActiveOrder(result.order);
     } catch (error) {
-      console.error("Lỗi cập nhật bàn:", error);
-      alert("Không thể kết nối tới server!");
+      setOrderError(error.message);
+    } finally {
+      setOrderLoading(false);
     }
   };
 
-  // =========================
-  // ĐĂNG NHẬP
-  // =========================
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleSaveOrder = async (order, payload) => {
+    const result = order
+      ? await updateOrder(order.id, payload)
+      : await createOrder(selectedTable.id, { ...payload, user_id: user.id });
+    await fetchTables();
+    return result.order;
+  };
 
+  const handleCompleteOrder = async (orderId) => {
+    await completeOrder(orderId);
+    await fetchTables();
+    setTablesNotice(`Đã hoàn tất đơn hàng và trả ${selectedTable.table_number}.`);
+    setSelectedTable(null);
+    setActiveOrder(null);
+    setCurrentPage("tables");
+  };
+
+  const handleLogin = async (event) => {
+    event.preventDefault();
     setLoginError("");
-
     if (!loginData.username || !loginData.password) {
       setLoginError("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
-
+    setLoginLoading(true);
     try {
       const response = await fetch(LOGIN_API, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(loginData),
       });
-
       const result = await response.json();
-
       if (!response.ok) {
         setLoginError(result.message || "Đăng nhập thất bại!");
         return;
       }
-
       setUser(result.user);
-
-      setLoginData({
-        username: "",
-        password: "",
-      });
-
+      setLoginData({ username: "", password: "" });
       setCurrentPage("dashboard");
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
       setLoginError("Không thể kết nối tới server!");
+    } finally {
+      setLoginLoading(false);
     }
   };
 
-  // =========================
-  // ĐĂNG XUẤT
-  // =========================
-  const handleLogout = () => {
-    setUser(null);
-    setCurrentPage("dashboard");
-  };
-
-  // =========================
-  // THỐNG KÊ BÀN
-  // =========================
-  const occupiedTables = tables.filter(
-    (table) => table.status === "Đang sử dụng",
-  ).length;
-
-  const totalTables = tables.length;
-
-  // =========================
-  // LOGIN SCREEN
-  // QUAN TRỌNG: NẰM TRƯỚC return()
-  // =========================
   if (!user) {
-    return (
-      <div className="login-page">
-        <div className="login-box">
-          <div className="login-logo">☕</div>
-
-          <h1>Coffee Manager</h1>
-
-          <p>Đăng nhập hệ thống quản lý</p>
-
-          <form onSubmit={handleLogin}>
-            <label>Tên đăng nhập</label>
-
-            <input
-              type="text"
-              value={loginData.username}
-              onChange={(e) =>
-                setLoginData({
-                  ...loginData,
-                  username: e.target.value,
-                })
-              }
-              placeholder="Nhập tên đăng nhập"
-            />
-
-            <label>Mật khẩu</label>
-
-            <input
-              type="password"
-              value={loginData.password}
-              onChange={(e) =>
-                setLoginData({
-                  ...loginData,
-                  password: e.target.value,
-                })
-              }
-              placeholder="Nhập mật khẩu"
-            />
-
-            {loginError && <p className="login-error">{loginError}</p>}
-
-            <button type="submit">Đăng nhập</button>
-          </form>
-
-          <div className="demo-account">
-            <p>Tài khoản demo:</p>
-            <p>Admin: admin / admin123</p>
-            <p>Nhân viên: nhanvien / 123456</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoginPage loginData={loginData} setLoginData={setLoginData} loginError={loginError} loading={loginLoading} onSubmit={handleLogin} />;
   }
 
-  // =========================
-  // MAIN APP
-  // =========================
+  const occupiedTables = tables.filter((table) => table.status === "Đang sử dụng").length;
+  const pageDetails = currentPage === "order" && selectedTable
+    ? { title: `Gọi món · ${selectedTable.table_number}`, subtitle: "Chọn món và cập nhật đơn hàng tại bàn" }
+    : PAGE_DETAILS[currentPage];
+
   return (
-    <div className="app">
-      {/* =========================
-          SIDEBAR
-      ========================= */}
-      <aside className="sidebar">
-        <div className="logo">
-          ☕ Coffee
-          <br />
-          Manager
-        </div>
-
-        <div className="user-info">
-          <strong>{user.full_name}</strong>
-
-          <span>{user.role === "admin" ? "Quản trị viên" : "Nhân viên"}</span>
-        </div>
-
-        <nav>
-          <a
-            className={currentPage === "dashboard" ? "active" : ""}
-            onClick={() => setCurrentPage("dashboard")}
-          >
-            Dashboard
-          </a>
-
-          <a
-            className={currentPage === "tables" ? "active" : ""}
-            onClick={() => setCurrentPage("tables")}
-          >
-            Quản lý bàn
-          </a>
-
-          <a
-            className={currentPage === "products" ? "active" : ""}
-            onClick={() => setCurrentPage("products")}
-          >
-            Quản lý món
-          </a>
-
-          <a>Hóa đơn</a>
-
-          <a>Nhân viên</a>
-        </nav>
-
-        <button className="logout-btn" onClick={handleLogout}>
-          🚪 Đăng xuất
-        </button>
-      </aside>
-
-      {/* =========================
-          MAIN CONTENT
-      ========================= */}
-      <main className="main">
-        {/* =========================
-            DASHBOARD
-        ========================= */}
-        {currentPage === "dashboard" && (
-          <>
-            <header className="header">
-              <h1>Dashboard</h1>
-
-              <p>Quản lý quán cà phê</p>
-            </header>
-
-            <section className="stats">
-              <div className="card">
-                <span>💰</span>
-
-                <div>
-                  <p>Doanh thu hôm nay</p>
-
-                  <h2>2.500.000 VNĐ</h2>
-                </div>
-              </div>
-
-              <div className="card">
-                <span>🧾</span>
-
-                <div>
-                  <p>Số món</p>
-
-                  <h2>{products.length}</h2>
-                </div>
-              </div>
-
-              <div className="card">
-                <span>🪑</span>
-
-                <div>
-                  <p>Bàn đang sử dụng</p>
-
-                  <h2>
-                    {occupiedTables} / {totalTables}
-                  </h2>
-                </div>
-              </div>
-            </section>
-
-            <section className="products-section">
-              <div className="section-header">
-                <h2>Món nổi bật</h2>
-
-                <button onClick={() => setCurrentPage("products")}>
-                  Xem quản lý món
-                </button>
-              </div>
-
-              <div className="product-grid">
-                {products.slice(0, 3).map((product) => (
-                  <div className="product-card" key={product.id}>
-                    <div className="product-icon">☕</div>
-
-                    <h3>{product.name}</h3>
-
-                    <p>{Number(product.price).toLocaleString("vi-VN")} VNĐ</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </>
-        )}
-
-        {/* =========================
-            QUẢN LÝ BÀN
-        ========================= */}
-        {currentPage === "tables" && (
-          <>
-            <header className="header">
-              <h1>Quản lý bàn</h1>
-
-              <p>Quản lý trạng thái các bàn trong quán</p>
-            </header>
-
-            <section className="tables-section">
-              <div className="table-summary">
-                <div className="summary-item">
-                  <span>🪑</span>
-
-                  <div>
-                    <p>Tổng số bàn</p>
-
-                    <h3>{totalTables}</h3>
-                  </div>
-                </div>
-
-                <div className="summary-item">
-                  <span>✅</span>
-
-                  <div>
-                    <p>Bàn trống</p>
-
-                    <h3>{totalTables - occupiedTables}</h3>
-                  </div>
-                </div>
-
-                <div className="summary-item">
-                  <span>🔴</span>
-
-                  <div>
-                    <p>Đang sử dụng</p>
-
-                    <h3>{occupiedTables}</h3>
-                  </div>
-                </div>
-              </div>
-
-              <div className="table-grid">
-                {tables.map((table) => {
-                  const isEmpty = table.status === "Trống";
-
-                  return (
-                    <div
-                      className={`table-card ${isEmpty ? "empty" : "busy"}`}
-                      key={table.id}
-                    >
-                      <div className="table-icon">🪑</div>
-
-                      <h3>{table.table_number}</h3>
-
-                      <span className="table-status">{table.status}</span>
-
-                      <button
-                        className="table-button"
-                        onClick={() => handleToggleTable(table)}
-                      >
-                        {isEmpty ? "Bàn đang trống" : "Bàn đang sử dụng"}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          </>
-        )}
-
-        {/* =========================
-            QUẢN LÝ MÓN
-        ========================= */}
-        {currentPage === "products" && (
-          <>
-            <header className="header">
-              <h1>Quản lý món</h1>
-
-              <p>Thêm, sửa và xóa món trong quán</p>
-            </header>
-
-            <section className="products-section">
-              <div className="section-header">
-                <h2>Danh sách món</h2>
-
-                <button onClick={handleAdd}>+ Thêm món</button>
-              </div>
-
-              <div className="product-grid">
-                {products.map((product) => (
-                  <div className="product-card" key={product.id}>
-                    <div className="product-icon">☕</div>
-
-                    <h3>{product.name}</h3>
-
-                    <p>{Number(product.price).toLocaleString("vi-VN")} VNĐ</p>
-
-                    <div className="product-actions">
-                      <button
-                        className="edit-btn"
-                        onClick={() => handleEdit(product)}
-                      >
-                        ✏️ Sửa
-                      </button>
-
-                      <button
-                        className="delete-btn"
-                        onClick={() => handleDelete(product.id)}
-                      >
-                        🗑️ Xóa
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </>
-        )}
-
-        {/* =========================
-            FORM THÊM / SỬA
-        ========================= */}
-        {showForm && (
-          <div className="modal-overlay">
-            <div className="modal">
-              <h2>{editingId !== null ? "Sửa món" : "Thêm món"}</h2>
-
-              <form onSubmit={handleSubmit}>
-                <label>Tên món</label>
-
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Nhập tên món"
-                />
-
-                <label>Giá</label>
-
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  placeholder="Nhập giá"
-                  min="0"
-                />
-
-                <div className="modal-actions">
-                  <button
-                    type="button"
-                    className="cancel-btn"
-                    onClick={() => setShowForm(false)}
-                  >
-                    Hủy
-                  </button>
-
-                  <button type="submit" className="save-btn">
-                    {editingId !== null ? "Cập nhật" : "Thêm món"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-      </main>
+    <div className="app-shell">
+      <Sidebar currentPage={currentPage} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} onNavigate={navigateTo} onLogout={() => { setUser(null); setCurrentPage("dashboard"); }} user={user} />
+      <div className="app-content">
+        <Header title={pageDetails.title} subtitle={pageDetails.subtitle} user={user} onMenuClick={() => setSidebarOpen(true)} />
+        <main className="page-content">
+          {currentPage === "dashboard" && <DashboardPage products={products} productsError={productsError} productsLoading={productsLoading} occupiedTables={occupiedTables} totalTables={tables.length} onNavigate={navigateTo} onRetryProducts={fetchProducts} />}
+          {currentPage === "products" && <ProductsPage products={products} error={productsError} loading={productsLoading} onAdd={handleAdd} onDelete={handleDelete} onEdit={handleEdit} onRetry={fetchProducts} />}
+          {currentPage === "tables" && <TablesPage tables={tables} occupiedTables={occupiedTables} error={tablesError} loading={tablesLoading} notice={tablesNotice} onRetry={fetchTables} onOpenOrder={handleOpenTable} />}
+          {currentPage === "order" && selectedTable && orderLoading && <section className="panel"><LoadingState label="Đang tải đơn hàng..." /></section>}
+          {currentPage === "order" && selectedTable && !orderLoading && orderError && <section className="panel"><ErrorState message={orderError} onRetry={() => handleOpenTable(selectedTable)} /></section>}
+          {currentPage === "order" && selectedTable && !orderLoading && !orderError && <OrderPage key={`${selectedTable.id}-${activeOrder?.id || "new"}`} table={selectedTable} order={activeOrder} products={products} productsLoading={productsLoading} productsError={productsError} onBack={() => setCurrentPage("tables")} onRetryProducts={fetchProducts} onSave={handleSaveOrder} onComplete={handleCompleteOrder} />}
+        </main>
+      </div>
+      {showForm && <ProductModal editing={editingId !== null} error={formError} formData={formData} loading={formLoading} onChange={(event) => setFormData({ ...formData, [event.target.name]: event.target.value })} onClose={closeForm} onSubmit={handleSubmit} />}
     </div>
   );
 }
