@@ -19,7 +19,7 @@ function LoginPage({ loginData, setLoginData, loginError, loading, onSubmit }) {
             {loginError && <div className="form-error"><Icon name="alert" size={17} />{loginError}</div>}
             <button className="button primary login-submit" type="submit" disabled={loading}>{loading && <span className="button-spinner" />}{loading ? "Đang đăng nhập..." : "Đăng nhập"}<Icon name="arrow" size={18} /></button>
           </form>
-          <div className="demo-account"><span>TÀI KHOẢN DÙNG THỬ</span><div><p><strong>Quản trị</strong> admin / admin123</p><p><strong>Nhân viên</strong> nhanvien / 123456</p></div></div>
+          <div className="login-security-note"><Icon name="shield" size={18} /><p><strong>Đăng nhập bảo mật</strong><span>Sử dụng tài khoản được quản trị viên cấp cho bạn.</span></p></div>
         </div>
       </section>
     </main>

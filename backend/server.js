@@ -1,16 +1,20 @@
 const express = require("express");
 const cors = require("cors");
 const db = require("./db");
+const { requireAuth, requireRole } = require("./middleware/auth");
+const authRoutes = require("./routes/auth");
 const orderRoutes = require("./routes/orders");
 const invoiceRoutes = require("./routes/invoices");
+const userRoutes = require("./routes/users");
 
 const app = express();
 const PORT = 5000;
 
 app.use(cors());
 app.use(express.json());
-app.use("/api", orderRoutes);
-app.use("/api", invoiceRoutes);
+app.use("/api", authRoutes);
+app.use("/api", requireAuth, orderRoutes);
+app.use("/api", requireAuth, invoiceRoutes);
 
 /* =========================
    GET - Kiểm tra server
@@ -24,7 +28,7 @@ app.get("/", (req, res) => {
 /* =========================
    GET - Lấy tất cả món
 ========================= */
-app.get("/api/products", (req, res) => {
+app.get("/api/products", requireAuth, (req, res) => {
   const sql = "SELECT * FROM products ORDER BY id";
 
   db.query(sql, (err, results) => {
@@ -43,7 +47,7 @@ app.get("/api/products", (req, res) => {
 /* =========================
    POST - Thêm món
 ========================= */
-app.post("/api/products", (req, res) => {
+app.post("/api/products", requireAuth, requireRole("admin"), (req, res) => {
   const { name, price } = req.body;
 
   if (!name || price === undefined) {
@@ -76,7 +80,7 @@ app.post("/api/products", (req, res) => {
 /* =========================
    PUT - Sửa món
 ========================= */
-app.put("/api/products/:id", (req, res) => {
+app.put("/api/products/:id", requireAuth, requireRole("admin"), (req, res) => {
   const { id } = req.params;
   const { name, price } = req.body;
 
@@ -116,7 +120,7 @@ app.put("/api/products/:id", (req, res) => {
 /* =========================
    GET - Lấy danh sách bàn
 ========================= */
-app.get("/api/tables", (req, res) => {
+app.get("/api/tables", requireAuth, (req, res) => {
   const sql = "SELECT * FROM cafe_tables ORDER BY id";
 
   db.query(sql, (err, results) => {
@@ -135,7 +139,7 @@ app.get("/api/tables", (req, res) => {
 /* =========================
    PUT - Cập nhật trạng thái bàn
 ========================= */
-app.put("/api/tables/:id", (req, res) => {
+app.put("/api/tables/:id", requireAuth, (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
@@ -177,7 +181,7 @@ app.put("/api/tables/:id", (req, res) => {
 /* =========================
    DELETE - Xóa món
 ========================= */
-app.delete("/api/products/:id", (req, res) => {
+app.delete("/api/products/:id", requireAuth, requireRole("admin"), (req, res) => {
   const { id } = req.params;
 
   const sql = "DELETE FROM products WHERE id = ?";
@@ -203,47 +207,7 @@ app.delete("/api/products/:id", (req, res) => {
   });
 });
 
-/* =========================
-   POST - Đăng nhập
-========================= */
-app.post("/api/login", (req, res) => {
-  const { username, password } = req.body;
-
-  if (!username || !password) {
-    return res.status(400).json({
-      message: "Vui lòng nhập tên đăng nhập và mật khẩu",
-    });
-  }
-
-  const sql = `
-        SELECT id, username, full_name, role
-        FROM users
-        WHERE username = ? AND password = ?
-    `;
-
-  db.query(sql, [username, password], (err, results) => {
-    if (err) {
-      console.error(err);
-
-      return res.status(500).json({
-        message: "Lỗi máy chủ",
-      });
-    }
-
-    if (results.length === 0) {
-      return res.status(401).json({
-        message: "Tên đăng nhập hoặc mật khẩu không đúng",
-      });
-    }
-
-    const user = results[0];
-
-    res.json({
-      message: "Đăng nhập thành công",
-      user: user,
-    });
-  });
-});
+app.use("/api", userRoutes);
 
 /* =========================
    START SERVER

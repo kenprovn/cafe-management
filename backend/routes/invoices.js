@@ -57,9 +57,8 @@ function sendError(res, error) {
 
 router.post("/orders/:orderId/checkout", async (req, res) => {
   const parsedOrderId = parsePositiveId(req.params.orderId, "Mã đơn hàng");
-  const parsedPaidBy = parsePositiveId(req.body.paid_by, "Mã nhân viên");
   const parsedMethod = validatePaymentMethod(req.body.payment_method);
-  const validationError = parsedOrderId.error || parsedPaidBy.error || parsedMethod.error;
+  const validationError = parsedOrderId.error || parsedMethod.error;
   if (validationError) return res.status(400).json({ message: validationError });
 
   const connection = await pool.getConnection();
@@ -83,13 +82,10 @@ router.post("/orders/:orderId/checkout", async (req, res) => {
       throw new HttpError(409, "Chỉ có thể thanh toán đơn hàng đang mở", "ORDER_NOT_OPEN");
     }
 
-    const [users] = await connection.execute("SELECT id FROM users WHERE id = ?", [parsedPaidBy.value]);
-    if (users.length === 0) throw new HttpError(400, "Nhân viên thanh toán không tồn tại");
-
     const [paymentResult] = await connection.execute(
       `INSERT INTO payments (order_id, amount, payment_method, paid_by)
        VALUES (?, ?, ?, ?)`,
-      [parsedOrderId.value, orders[0].total_amount, parsedMethod.value, parsedPaidBy.value],
+      [parsedOrderId.value, orders[0].total_amount, parsedMethod.value, req.user.id],
     );
     await connection.execute(
       "UPDATE orders SET status = 'COMPLETED', closed_at = CURRENT_TIMESTAMP WHERE id = ?",

@@ -5,17 +5,34 @@ import { ErrorState, LoadingState } from "./components/common/StateMessage";
 import Header from "./components/layout/Header";
 import Sidebar from "./components/layout/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
+import EmployeesPage from "./pages/EmployeesPage";
 import InvoiceDetailPage from "./pages/InvoiceDetailPage";
 import InvoicesPage from "./pages/InvoicesPage";
 import LoginPage from "./pages/LoginPage";
 import OrderPage from "./pages/OrderPage";
 import ProductsPage from "./pages/ProductsPage";
 import TablesPage from "./pages/TablesPage";
-import { checkoutOrder, createOrder, getActiveOrder, getDashboardSummary, getInvoice, getInvoices, updateOrder } from "./services/api";
-
-const PRODUCT_API = "http://localhost:5000/api/products";
-const TABLE_API = "http://localhost:5000/api/tables";
-const LOGIN_API = "http://localhost:5000/api/login";
+import {
+  checkoutOrder,
+  clearStoredToken,
+  createOrder,
+  createProduct,
+  deleteProduct,
+  getActiveOrder,
+  getCurrentUser,
+  getDashboardSummary,
+  getInvoice,
+  getInvoices,
+  getProducts,
+  getStoredToken,
+  getTables,
+  login,
+  logout,
+  setUnauthorizedHandler,
+  storeToken,
+  updateOrder,
+  updateProduct,
+} from "./services/api";
 
 const PAGE_DETAILS = {
   dashboard: { title: "Tổng quan", subtitle: "Theo dõi hoạt động của quán hôm nay" },
@@ -24,6 +41,7 @@ const PAGE_DETAILS = {
   order: { title: "Gọi món", subtitle: "Tạo và cập nhật đơn hàng tại bàn" },
   invoices: { title: "Hóa đơn", subtitle: "Tra cứu lịch sử thanh toán của quán" },
   invoiceDetail: { title: "Chi tiết hóa đơn", subtitle: "Thông tin thanh toán và các món đã phục vụ" },
+  employees: { title: "Quản lý nhân viên", subtitle: "Tài khoản, vai trò và trạng thái đội ngũ" },
 };
 
 function App() {
@@ -31,6 +49,7 @@ function App() {
   const [tables, setTables] = useState([]);
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [productsLoading, setProductsLoading] = useState(true);
   const [tablesLoading, setTablesLoading] = useState(true);
@@ -64,9 +83,7 @@ function App() {
     setProductsLoading(true);
     setProductsError("");
     try {
-      const response = await fetch(PRODUCT_API);
-      if (!response.ok) throw new Error("Không thể lấy danh sách món");
-      setProducts(await response.json());
+      setProducts(await getProducts());
     } catch (error) {
       console.error("Lỗi lấy sản phẩm:", error);
       setProductsError("Không thể tải danh sách món. Vui lòng kiểm tra máy chủ.");
@@ -79,9 +96,7 @@ function App() {
     setTablesLoading(true);
     setTablesError("");
     try {
-      const response = await fetch(TABLE_API);
-      if (!response.ok) throw new Error("Không thể lấy danh sách bàn");
-      setTables(await response.json());
+      setTables(await getTables());
     } catch (error) {
       console.error("Lỗi lấy danh sách bàn:", error);
       setTablesError("Không thể tải danh sách bàn. Vui lòng kiểm tra máy chủ.");
@@ -116,16 +131,41 @@ function App() {
   };
 
   useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null);
+      setCurrentPage("dashboard");
+      setLoginError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      if (!getStoredToken()) {
+        setAuthLoading(false);
+        return;
+      }
+      try {
+        const result = await getCurrentUser();
+        setUser(result.user);
+      } catch (error) {
+        if (error.status !== 401) setLoginError("Không thể khôi phục phiên đăng nhập.");
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    restoreSession();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
     const loadInitialData = async () => {
+      setProductsLoading(true);
+      setTablesLoading(true);
+      setDashboardLoading(true);
       const [productResult, tableResult, dashboardResult] = await Promise.allSettled([
-        fetch(PRODUCT_API).then((response) => {
-          if (!response.ok) throw new Error("Không thể lấy danh sách món");
-          return response.json();
-        }),
-        fetch(TABLE_API).then((response) => {
-          if (!response.ok) throw new Error("Không thể lấy danh sách bàn");
-          return response.json();
-        }),
+        getProducts(),
+        getTables(),
         getDashboardSummary(),
       ]);
 
@@ -155,9 +195,14 @@ function App() {
     };
 
     loadInitialData();
-  }, []);
+  }, [user]);
 
   const navigateTo = (page) => {
+    if (["products", "employees", "reports"].includes(page) && user.role !== "admin") {
+      setCurrentPage("dashboard");
+      setSidebarOpen(false);
+      return;
+    }
     setCurrentPage(page);
     setSidebarOpen(false);
     if (page === "invoices") fetchInvoiceList();
@@ -199,16 +244,8 @@ function App() {
     setFormLoading(true);
     try {
       const isEditing = editingId !== null;
-      const response = await fetch(isEditing ? `${PRODUCT_API}/${editingId}` : PRODUCT_API, {
-        method: isEditing ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: formData.name.trim(), price }),
-      });
-      const result = await response.json();
-      if (!response.ok) {
-        setFormError(result.message || "Có lỗi xảy ra. Vui lòng thử lại.");
-        return;
-      }
+      if (isEditing) await updateProduct(editingId, { name: formData.name.trim(), price });
+      else await createProduct({ name: formData.name.trim(), price });
       setShowForm(false);
       setEditingId(null);
       setFormData({ name: "", price: "" });
@@ -224,12 +261,7 @@ function App() {
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa món này không?")) return;
     try {
-      const response = await fetch(`${PRODUCT_API}/${id}`, { method: "DELETE" });
-      const result = await response.json();
-      if (!response.ok) {
-        alert(result.message || "Xóa thất bại!");
-        return;
-      }
+      await deleteProduct(id);
       await fetchProducts();
     } catch (error) {
       console.error("Lỗi:", error);
@@ -261,7 +293,7 @@ function App() {
   const handleSaveOrder = async (order, payload) => {
     const result = order
       ? await updateOrder(order.id, payload)
-      : await createOrder(selectedTable.id, { ...payload, user_id: user.id });
+      : await createOrder(selectedTable.id, payload);
     await fetchTables();
     return result.order;
   };
@@ -269,7 +301,6 @@ function App() {
   const handleCheckoutOrder = async (orderId, paymentMethod) => {
     const result = await checkoutOrder(orderId, {
       payment_method: paymentMethod,
-      paid_by: user.id,
     });
     await Promise.all([fetchTables(), fetchDashboard(), fetchInvoiceList({})]);
     setSelectedTable(null);
@@ -303,28 +334,40 @@ function App() {
       setLoginError("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
+    const credentials = { ...loginData };
+    setLoginData({ username: "", password: "" });
     setLoginLoading(true);
     try {
-      const response = await fetch(LOGIN_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(loginData),
-      });
-      const result = await response.json();
-      if (!response.ok) {
-        setLoginError(result.message || "Đăng nhập thất bại!");
-        return;
-      }
+      const result = await login(credentials);
+      storeToken(result.token);
       setUser(result.user);
-      setLoginData({ username: "", password: "" });
       setCurrentPage("dashboard");
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
-      setLoginError("Không thể kết nối tới server!");
+      setLoginError(error.message || "Không thể kết nối tới server!");
     } finally {
       setLoginLoading(false);
     }
   };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      if (error.status !== 401) console.error("Lỗi đăng xuất:", error);
+    } finally {
+      clearStoredToken();
+      setUser(null);
+      setCurrentPage("dashboard");
+      setProducts([]);
+      setTables([]);
+      setInvoices([]);
+    }
+  };
+
+  if (authLoading) {
+    return <main className="auth-restoring"><span className="button-spinner" /><p>Đang khôi phục phiên đăng nhập...</p></main>;
+  }
 
   if (!user) {
     return <LoginPage loginData={loginData} setLoginData={setLoginData} loginError={loginError} loading={loginLoading} onSubmit={handleLogin} />;
@@ -337,18 +380,19 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar currentPage={currentPage} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} onNavigate={navigateTo} onLogout={() => { setUser(null); setCurrentPage("dashboard"); }} user={user} />
+      <Sidebar currentPage={currentPage} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} onNavigate={navigateTo} onLogout={handleLogout} user={user} />
       <div className="app-content">
         <Header title={pageDetails.title} subtitle={pageDetails.subtitle} user={user} onMenuClick={() => setSidebarOpen(true)} />
         <main className="page-content">
-          {currentPage === "dashboard" && <DashboardPage products={products} productsError={productsError} productsLoading={productsLoading} dashboardSummary={dashboardSummary} dashboardLoading={dashboardLoading} occupiedTables={occupiedTables} totalTables={tables.length} onNavigate={navigateTo} onRetryProducts={fetchProducts} />}
-          {currentPage === "products" && <ProductsPage products={products} error={productsError} loading={productsLoading} onAdd={handleAdd} onDelete={handleDelete} onEdit={handleEdit} onRetry={fetchProducts} />}
+          {currentPage === "dashboard" && <DashboardPage products={products} productsError={productsError} productsLoading={productsLoading} dashboardSummary={dashboardSummary} dashboardLoading={dashboardLoading} occupiedTables={occupiedTables} totalTables={tables.length} onNavigate={navigateTo} onRetryProducts={fetchProducts} canManageProducts={user.role === "admin"} />}
+          {currentPage === "products" && user.role === "admin" && <ProductsPage products={products} error={productsError} loading={productsLoading} onAdd={handleAdd} onDelete={handleDelete} onEdit={handleEdit} onRetry={fetchProducts} />}
           {currentPage === "tables" && <TablesPage tables={tables} occupiedTables={occupiedTables} error={tablesError} loading={tablesLoading} notice={tablesNotice} onRetry={fetchTables} onOpenOrder={handleOpenTable} />}
           {currentPage === "order" && selectedTable && orderLoading && <section className="panel"><LoadingState label="Đang tải đơn hàng..." /></section>}
           {currentPage === "order" && selectedTable && !orderLoading && orderError && <section className="panel"><ErrorState message={orderError} onRetry={() => handleOpenTable(selectedTable)} /></section>}
           {currentPage === "order" && selectedTable && !orderLoading && !orderError && <OrderPage key={`${selectedTable.id}-${activeOrder?.id || "new"}`} table={selectedTable} order={activeOrder} user={user} products={products} productsLoading={productsLoading} productsError={productsError} onBack={() => setCurrentPage("tables")} onRetryProducts={fetchProducts} onSave={handleSaveOrder} onCheckout={handleCheckoutOrder} />}
           {currentPage === "invoices" && <InvoicesPage invoices={invoices} loading={invoicesLoading} error={invoicesError} onSearch={fetchInvoiceList} onRetry={() => fetchInvoiceList(invoiceFilters)} onOpen={handleOpenInvoice} />}
           {currentPage === "invoiceDetail" && <InvoiceDetailPage invoice={selectedInvoice} loading={invoiceLoading} error={invoiceError} onBack={() => { setCurrentPage("invoices"); fetchInvoiceList(invoiceFilters); }} onRetry={() => handleOpenInvoice(selectedInvoiceId)} />}
+          {currentPage === "employees" && user.role === "admin" && <EmployeesPage currentUser={user} />}
         </main>
       </div>
       {showForm && <ProductModal editing={editingId !== null} error={formError} formData={formData} loading={formLoading} onChange={(event) => setFormData({ ...formData, [event.target.name]: event.target.value })} onClose={closeForm} onSubmit={handleSubmit} />}

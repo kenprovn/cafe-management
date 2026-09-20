@@ -495,3 +495,254 @@ button { -webkit-tap-highlight-color: transparent; }
   .invoice-table-wrap { overflow: visible; }
   .invoice-table { min-width: 0; }
 }
+
+/* Employee management and authenticated session states */
+.auth-restoring {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  color: var(--muted);
+  background: var(--warm-white);
+}
+
+.auth-restoring .button-spinner {
+  width: 28px;
+  height: 28px;
+  border-color: rgba(112, 72, 48, 0.2);
+  border-top-color: var(--espresso);
+}
+
+.login-security-note {
+  margin-top: 28px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--espresso);
+  background: var(--cream);
+}
+
+.login-security-note p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.login-security-note span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.employee-filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 180px 190px auto;
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.employee-filters select,
+.employee-modal select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 38px 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--text);
+  background: var(--surface) no-repeat right 13px center;
+  font: inherit;
+  outline: none;
+}
+
+.employee-filters select:focus,
+.employee-modal select:focus {
+  border-color: var(--caramel);
+  box-shadow: 0 0 0 3px rgba(184, 121, 69, 0.13);
+}
+
+.employee-notice {
+  margin: 0 0 18px;
+}
+
+.employee-table {
+  min-width: 900px;
+}
+
+.employee-cell {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.employee-avatar {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  color: white;
+  background: linear-gradient(145deg, var(--coffee), var(--caramel));
+  font-weight: 800;
+}
+
+.employee-cell > div {
+  display: grid;
+  gap: 3px;
+}
+
+.employee-cell strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.employee-cell strong small {
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--coffee);
+  background: var(--cream);
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.employee-cell span:not(.employee-avatar) {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.role-badge {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.role-badge.admin {
+  color: #7a421d;
+  background: #f8e2cf;
+}
+
+.role-badge.staff {
+  color: #3c6854;
+  background: #e1f0e7;
+}
+
+.status-badge.disabled {
+  color: #7b6f69;
+  background: #eee9e6;
+}
+
+.status-badge.disabled .status-dot {
+  background: #958983;
+}
+
+.disabled-row {
+  opacity: 0.68;
+}
+
+.key-action {
+  color: #70513f;
+  background: #f3ebe5;
+}
+
+.enable-action {
+  color: #357157;
+  background: #e4f1e9;
+}
+
+.employee-modal {
+  width: min(520px, calc(100vw - 32px));
+}
+
+.confirm-dialog {
+  width: min(430px, calc(100vw - 32px));
+  padding: 28px;
+  border-radius: 20px;
+  text-align: center;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(61, 38, 26, 0.24);
+}
+
+.confirm-dialog h2 {
+  margin: 14px 0 8px;
+}
+
+.confirm-dialog > p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.confirm-dialog .modal-actions {
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.confirm-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  border-radius: 16px;
+}
+
+.confirm-icon.danger {
+  color: #a23f37;
+  background: #fbe7e4;
+}
+
+.confirm-icon.success {
+  color: #357157;
+  background: #e4f1e9;
+}
+
+.danger-button {
+  color: white;
+  background: #a6473f;
+}
+
+.danger-button:hover:not(:disabled) {
+  background: #8d3731;
+}
+
+@media (max-width: 900px) {
+  .employee-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .employee-filters .search-box {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .employee-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .employee-filters .search-box {
+    grid-column: auto;
+  }
+
+  .employee-filters .button {
+    width: 100%;
+  }
+
+  .employees-page .panel-header {
+    align-items: stretch;
+  }
+
+  .employees-page .panel-header .button {
+    width: 100%;
+  }
+}

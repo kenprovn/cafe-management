@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../db");
+const { requireRole } = require("../middleware/auth");
 const {
   parsePositiveId,
   validateItems,
@@ -122,10 +123,9 @@ router.get("/tables/:tableId/active-order", async (req, res) => {
 
 router.post("/tables/:tableId/orders", async (req, res) => {
   const parsedTableId = parsePositiveId(req.params.tableId, "Mã bàn");
-  const parsedUserId = parsePositiveId(req.body.user_id, "Mã người dùng");
   const parsedNote = validateNote(req.body.note);
   const parsedItems = validateItems(req.body.items);
-  const validationError = parsedTableId.error || parsedUserId.error || parsedNote.error || parsedItems.error;
+  const validationError = parsedTableId.error || parsedNote.error || parsedItems.error;
   if (validationError) return res.status(400).json({ message: validationError });
 
   const connection = await pool.getConnection();
@@ -146,9 +146,6 @@ router.post("/tables/:tableId/orders", async (req, res) => {
       throw new HttpError(409, "Bàn này đã có đơn hàng đang mở", "ACTIVE_ORDER_EXISTS");
     }
 
-    const [users] = await connection.execute("SELECT id FROM users WHERE id = ?", [parsedUserId.value]);
-    if (users.length === 0) throw new HttpError(400, "Người dùng không tồn tại");
-
     const productIds = parsedItems.value.map((item) => item.productId);
     const products = await loadProducts(connection, productIds);
     const orderItems = parsedItems.value.map((item) => {
@@ -165,7 +162,7 @@ router.post("/tables/:tableId/orders", async (req, res) => {
     const [result] = await connection.execute(
       `INSERT INTO orders (table_id, created_by, note, total_amount)
        VALUES (?, ?, ?, ?)`,
-      [parsedTableId.value, parsedUserId.value, parsedNote.value, centsToDecimal(totalCents)],
+      [parsedTableId.value, req.user.id, parsedNote.value, centsToDecimal(totalCents)],
     );
 
     for (const item of orderItems) {
@@ -304,7 +301,7 @@ router.put("/orders/:orderId", async (req, res) => {
   }
 });
 
-router.patch("/orders/:orderId/complete", async (req, res) => {
+router.patch("/orders/:orderId/complete", requireRole("admin"), async (req, res) => {
   const parsedOrderId = parsePositiveId(req.params.orderId, "Mã đơn hàng");
   if (parsedOrderId.error) return res.status(400).json({ message: parsedOrderId.error });
 
