@@ -5,11 +5,13 @@ import { ErrorState, LoadingState } from "./components/common/StateMessage";
 import Header from "./components/layout/Header";
 import Sidebar from "./components/layout/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
+import InvoiceDetailPage from "./pages/InvoiceDetailPage";
+import InvoicesPage from "./pages/InvoicesPage";
 import LoginPage from "./pages/LoginPage";
 import OrderPage from "./pages/OrderPage";
 import ProductsPage from "./pages/ProductsPage";
 import TablesPage from "./pages/TablesPage";
-import { completeOrder, createOrder, getActiveOrder, updateOrder } from "./services/api";
+import { checkoutOrder, createOrder, getActiveOrder, getDashboardSummary, getInvoice, getInvoices, updateOrder } from "./services/api";
 
 const PRODUCT_API = "http://localhost:5000/api/products";
 const TABLE_API = "http://localhost:5000/api/tables";
@@ -20,6 +22,8 @@ const PAGE_DETAILS = {
   tables: { title: "Quản lý bàn", subtitle: "Theo dõi và cập nhật trạng thái phục vụ" },
   products: { title: "Quản lý món", subtitle: "Quản lý thực đơn và giá bán tại quán" },
   order: { title: "Gọi món", subtitle: "Tạo và cập nhật đơn hàng tại bàn" },
+  invoices: { title: "Hóa đơn", subtitle: "Tra cứu lịch sử thanh toán của quán" },
+  invoiceDetail: { title: "Chi tiết hóa đơn", subtitle: "Thông tin thanh toán và các món đã phục vụ" },
 };
 
 function App() {
@@ -45,6 +49,16 @@ function App() {
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [tablesNotice, setTablesNotice] = useState("");
+  const [dashboardSummary, setDashboardSummary] = useState({ today_revenue: 0, paid_orders_today: 0 });
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [invoices, setInvoices] = useState([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+  const [invoicesError, setInvoicesError] = useState("");
+  const [invoiceFilters, setInvoiceFilters] = useState({});
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceError, setInvoiceError] = useState("");
 
   const fetchProducts = async () => {
     setProductsLoading(true);
@@ -76,9 +90,34 @@ function App() {
     }
   };
 
+  const fetchDashboard = async () => {
+    setDashboardLoading(true);
+    try {
+      setDashboardSummary(await getDashboardSummary());
+    } catch (error) {
+      console.error("Lỗi lấy doanh thu:", error);
+    } finally {
+      setDashboardLoading(false);
+    }
+  };
+
+  const fetchInvoiceList = async (filters = invoiceFilters) => {
+    setInvoicesLoading(true);
+    setInvoicesError("");
+    try {
+      const result = await getInvoices(filters);
+      setInvoices(result.invoices);
+      setInvoiceFilters(filters);
+    } catch (error) {
+      setInvoicesError(error.message);
+    } finally {
+      setInvoicesLoading(false);
+    }
+  };
+
   useEffect(() => {
     const loadInitialData = async () => {
-      const [productResult, tableResult] = await Promise.allSettled([
+      const [productResult, tableResult, dashboardResult] = await Promise.allSettled([
         fetch(PRODUCT_API).then((response) => {
           if (!response.ok) throw new Error("Không thể lấy danh sách món");
           return response.json();
@@ -87,6 +126,7 @@ function App() {
           if (!response.ok) throw new Error("Không thể lấy danh sách bàn");
           return response.json();
         }),
+        getDashboardSummary(),
       ]);
 
       if (productResult.status === "fulfilled") {
@@ -103,8 +143,15 @@ function App() {
         setTablesError("Không thể tải danh sách bàn. Vui lòng kiểm tra máy chủ.");
       }
 
+      if (dashboardResult.status === "fulfilled") {
+        setDashboardSummary(dashboardResult.value);
+      } else {
+        console.error("Lỗi lấy doanh thu:", dashboardResult.reason);
+      }
+
       setProductsLoading(false);
       setTablesLoading(false);
+      setDashboardLoading(false);
     };
 
     loadInitialData();
@@ -113,6 +160,7 @@ function App() {
   const navigateTo = (page) => {
     setCurrentPage(page);
     setSidebarOpen(false);
+    if (page === "invoices") fetchInvoiceList();
   };
 
   const handleAdd = () => {
@@ -218,13 +266,34 @@ function App() {
     return result.order;
   };
 
-  const handleCompleteOrder = async (orderId) => {
-    await completeOrder(orderId);
-    await fetchTables();
-    setTablesNotice(`Đã hoàn tất đơn hàng và trả ${selectedTable.table_number}.`);
+  const handleCheckoutOrder = async (orderId, paymentMethod) => {
+    const result = await checkoutOrder(orderId, {
+      payment_method: paymentMethod,
+      paid_by: user.id,
+    });
+    await Promise.all([fetchTables(), fetchDashboard(), fetchInvoiceList({})]);
     setSelectedTable(null);
     setActiveOrder(null);
-    setCurrentPage("tables");
+    setSelectedInvoice(result.invoice);
+    setSelectedInvoiceId(result.invoice.invoice_id);
+    setCurrentPage("invoiceDetail");
+    return result.invoice;
+  };
+
+  const handleOpenInvoice = async (invoiceId) => {
+    setSelectedInvoiceId(invoiceId);
+    setSelectedInvoice(null);
+    setInvoiceLoading(true);
+    setInvoiceError("");
+    setCurrentPage("invoiceDetail");
+    try {
+      const result = await getInvoice(invoiceId);
+      setSelectedInvoice(result.invoice);
+    } catch (error) {
+      setInvoiceError(error.message);
+    } finally {
+      setInvoiceLoading(false);
+    }
   };
 
   const handleLogin = async (event) => {
@@ -272,12 +341,14 @@ function App() {
       <div className="app-content">
         <Header title={pageDetails.title} subtitle={pageDetails.subtitle} user={user} onMenuClick={() => setSidebarOpen(true)} />
         <main className="page-content">
-          {currentPage === "dashboard" && <DashboardPage products={products} productsError={productsError} productsLoading={productsLoading} occupiedTables={occupiedTables} totalTables={tables.length} onNavigate={navigateTo} onRetryProducts={fetchProducts} />}
+          {currentPage === "dashboard" && <DashboardPage products={products} productsError={productsError} productsLoading={productsLoading} dashboardSummary={dashboardSummary} dashboardLoading={dashboardLoading} occupiedTables={occupiedTables} totalTables={tables.length} onNavigate={navigateTo} onRetryProducts={fetchProducts} />}
           {currentPage === "products" && <ProductsPage products={products} error={productsError} loading={productsLoading} onAdd={handleAdd} onDelete={handleDelete} onEdit={handleEdit} onRetry={fetchProducts} />}
           {currentPage === "tables" && <TablesPage tables={tables} occupiedTables={occupiedTables} error={tablesError} loading={tablesLoading} notice={tablesNotice} onRetry={fetchTables} onOpenOrder={handleOpenTable} />}
           {currentPage === "order" && selectedTable && orderLoading && <section className="panel"><LoadingState label="Đang tải đơn hàng..." /></section>}
           {currentPage === "order" && selectedTable && !orderLoading && orderError && <section className="panel"><ErrorState message={orderError} onRetry={() => handleOpenTable(selectedTable)} /></section>}
-          {currentPage === "order" && selectedTable && !orderLoading && !orderError && <OrderPage key={`${selectedTable.id}-${activeOrder?.id || "new"}`} table={selectedTable} order={activeOrder} products={products} productsLoading={productsLoading} productsError={productsError} onBack={() => setCurrentPage("tables")} onRetryProducts={fetchProducts} onSave={handleSaveOrder} onComplete={handleCompleteOrder} />}
+          {currentPage === "order" && selectedTable && !orderLoading && !orderError && <OrderPage key={`${selectedTable.id}-${activeOrder?.id || "new"}`} table={selectedTable} order={activeOrder} user={user} products={products} productsLoading={productsLoading} productsError={productsError} onBack={() => setCurrentPage("tables")} onRetryProducts={fetchProducts} onSave={handleSaveOrder} onCheckout={handleCheckoutOrder} />}
+          {currentPage === "invoices" && <InvoicesPage invoices={invoices} loading={invoicesLoading} error={invoicesError} onSearch={fetchInvoiceList} onRetry={() => fetchInvoiceList(invoiceFilters)} onOpen={handleOpenInvoice} />}
+          {currentPage === "invoiceDetail" && <InvoiceDetailPage invoice={selectedInvoice} loading={invoiceLoading} error={invoiceError} onBack={() => { setCurrentPage("invoices"); fetchInvoiceList(invoiceFilters); }} onRetry={() => handleOpenInvoice(selectedInvoiceId)} />}
         </main>
       </div>
       {showForm && <ProductModal editing={editingId !== null} error={formError} formData={formData} loading={formLoading} onChange={(event) => setFormData({ ...formData, [event.target.name]: event.target.value })} onClose={closeForm} onSubmit={handleSubmit} />}

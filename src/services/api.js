@@ -28,3 +28,14 @@ export const getActiveOrder = (tableId) => request(`/tables/${tableId}/active-or
 export const createOrder = (tableId, payload) => request(`/tables/${tableId}/orders`, jsonOptions("POST", payload));
 export const updateOrder = (orderId, payload) => request(`/orders/${orderId}`, jsonOptions("PUT", payload));
 export const completeOrder = (orderId) => request(`/orders/${orderId}/complete`, { method: "PATCH" });
+export const checkoutOrder = (orderId, payload) => request(`/orders/${orderId}/checkout`, jsonOptions("POST", payload));
+export const getInvoices = ({ search = "", dateFrom = "", dateTo = "" } = {}) => {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (dateFrom) params.set("date_from", dateFrom);
+  if (dateTo) params.set("date_to", dateTo);
+  const query = params.toString();
+  return request(`/invoices${query ? `?${query}` : ""}`);
+};
+export const getInvoice = (invoiceId) => request(`/invoices/${invoiceId}`);
+export const getDashboardSummary = () => request("/dashboard/summary");

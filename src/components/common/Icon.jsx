@@ -24,6 +24,11 @@ const paths = {
   note: <><path d="M4 4h16v16H4z" /><path d="M8 9h8M8 13h6" /></>,
   check: <path d="m5 12 4 4L19 6" />,
   back: <path d="m15 18-6-6 6-6M9 12h11" />,
+  cash: <><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2" /><path d="M7 9h.01M17 15h.01" /></>,
+  bank: <><path d="m3 10 9-6 9 6M5 10h14M6 10v7M10 10v7M14 10v7M18 10v7M4 20h16" /></>,
+  card: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18M7 15h3" /></>,
+  print: <><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path d="M6 14h12v7H6z" /></>,
+  filter: <path d="M4 5h16l-6 7v5l-4 2v-7Z" />,
 };
 
 function Icon({ name, size = 20, className = "" }) {

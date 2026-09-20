@@ -2,20 +2,24 @@ import { useState } from "react";
 import Icon from "../components/common/Icon";
 import OrderCart from "../components/order/OrderCart";
 import ProductCatalog from "../components/order/ProductCatalog";
+import CheckoutModal from "../components/payment/CheckoutModal";
 
-function OrderPage({ table, order, products, productsLoading, productsError, onBack, onRetryProducts, onSave, onComplete }) {
+function OrderPage({ table, order, user, products, productsLoading, productsError, onBack, onRetryProducts, onSave, onCheckout }) {
   const [currentOrder, setCurrentOrder] = useState(order);
   const [items, setItems] = useState(() => order?.items || []);
   const [note, setNote] = useState(() => order?.note || "");
   const [saving, setSaving] = useState(false);
-  const [completing, setCompleting] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [confirmingComplete, setConfirmingComplete] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
 
   const addProduct = (product) => {
     setError("");
     setSuccess("");
+    setDirty(true);
     setItems((currentItems) => {
       const existing = currentItems.find((item) => item.product_id === product.id);
       if (existing) {
@@ -33,11 +37,13 @@ function OrderPage({ table, order, products, productsLoading, productsError, onB
   const changeQuantity = (target, quantity) => {
     if (quantity < 1) {
       setItems((current) => current.filter((item) => item !== target));
+      setDirty(true);
       return;
     }
     if (quantity > 999) return;
     setItems((current) => current.map((item) => item === target ? { ...item, quantity } : item));
     setSuccess("");
+    setDirty(true);
   };
 
   const saveOrder = async () => {
@@ -57,6 +63,7 @@ function OrderPage({ table, order, products, productsLoading, productsError, onB
       setItems(savedOrder.items);
       setNote(savedOrder.note || "");
       setSuccess(currentOrder ? "Đơn hàng đã được cập nhật." : "Đã mở đơn hàng và chuyển bàn sang đang sử dụng.");
+      setDirty(false);
     } catch (saveError) {
       setError(saveError.message);
     } finally {
@@ -64,35 +71,25 @@ function OrderPage({ table, order, products, productsLoading, productsError, onB
     }
   };
 
-  const completeOrder = async () => {
-    setConfirmingComplete(false);
-    setCompleting(true);
-    setError("");
+  const checkout = async (paymentMethod) => {
+    setCheckingOut(true);
+    setCheckoutError("");
     try {
-      await onComplete(currentOrder.id);
-    } catch (completeError) {
-      setError(completeError.message);
-      setCompleting(false);
+      await onCheckout(currentOrder.id, paymentMethod);
+    } catch (checkoutFailure) {
+      setCheckoutError(checkoutFailure.message);
+      setCheckingOut(false);
     }
   };
 
   return (
     <div className="order-page">
-      <div className="order-page-toolbar"><button className="button ghost" onClick={onBack}><Icon name="back" size={17} /> Quay lại sơ đồ bàn</button><div><span className="status-dot" />{currentOrder ? "Đơn đã lưu" : "Chưa lưu"}</div></div>
+      <div className="order-page-toolbar"><button className="button ghost" onClick={onBack}><Icon name="back" size={17} /> Quay lại sơ đồ bàn</button><div><span className="status-dot" />{dirty ? "Có thay đổi chưa lưu" : currentOrder ? "Đơn đã lưu" : "Chưa lưu"}</div></div>
       <div className="pos-layout">
         <ProductCatalog products={products} loading={productsLoading} error={productsError} onAdd={addProduct} onRetry={onRetryProducts} />
-        <OrderCart table={table} order={currentOrder} items={items} note={note} error={error} success={success} saving={saving} completing={completing} onNoteChange={(value) => { setNote(value); setSuccess(""); }} onQuantityChange={changeQuantity} onRemove={(target) => { setItems((current) => current.filter((item) => item !== target)); setSuccess(""); }} onSave={saveOrder} onComplete={() => setConfirmingComplete(true)} />
+        <OrderCart table={table} order={currentOrder} items={items} note={note} error={error} success={success} saving={saving} checkingOut={checkingOut} dirty={dirty} onNoteChange={(value) => { setNote(value); setSuccess(""); setDirty(true); }} onQuantityChange={changeQuantity} onRemove={(target) => { setItems((current) => current.filter((item) => item !== target)); setSuccess(""); setDirty(true); }} onSave={saveOrder} onCheckout={() => setCheckoutOpen(true)} />
       </div>
-      {confirmingComplete && (
-        <div className="modal-overlay" onMouseDown={(event) => event.target === event.currentTarget && setConfirmingComplete(false)}>
-          <section className="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="complete-order-title">
-            <span className="confirm-icon"><Icon name="check" size={27} /></span>
-            <h2 id="complete-order-title">Hoàn tất đơn hàng?</h2>
-            <p>Đơn của <strong>{table.table_number}</strong> sẽ được đóng và bàn sẽ chuyển về trạng thái trống.</p>
-            <div className="modal-actions"><button type="button" className="button ghost" onClick={() => setConfirmingComplete(false)}>Tiếp tục phục vụ</button><button type="button" className="button primary" onClick={completeOrder}>Hoàn tất & trả bàn</button></div>
-          </section>
-        </div>
-      )}
+      {checkoutOpen && <CheckoutModal order={currentOrder} table={table} user={user} loading={checkingOut} error={checkoutError} onClose={() => { setCheckoutOpen(false); setCheckoutError(""); }} onConfirm={checkout} />}
     </div>
   );
 }

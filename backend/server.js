@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./db");
 const orderRoutes = require("./routes/orders");
+const invoiceRoutes = require("./routes/invoices");
 
 const app = express();
 const PORT = 5000;
@@ -9,6 +10,7 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 app.use("/api", orderRoutes);
+app.use("/api", invoiceRoutes);
 
 /* =========================
    GET - Kiểm tra server

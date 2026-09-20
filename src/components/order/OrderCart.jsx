@@ -4,7 +4,7 @@ function currency(value) {
   return `${Number(value).toLocaleString("vi-VN")} ₫`;
 }
 
-function OrderCart({ table, order, items, note, error, success, saving, completing, onNoteChange, onQuantityChange, onRemove, onSave, onComplete }) {
+function OrderCart({ table, order, items, note, error, success, saving, checkingOut, dirty, onNoteChange, onQuantityChange, onRemove, onSave, onCheckout }) {
   const total = items.reduce((sum, item) => sum + Number(item.unit_price) * item.quantity, 0);
 
   return (
@@ -32,8 +32,8 @@ function OrderCart({ table, order, items, note, error, success, saving, completi
       {error && <div className="order-feedback error"><Icon name="alert" size={17} />{error}</div>}
       {success && <div className="order-feedback success"><Icon name="check" size={17} />{success}</div>}
       <div className="cart-total"><span>Tổng cộng</span><strong>{currency(total)}</strong></div>
-      <button className="button primary save-order-button" disabled={items.length === 0 || saving || completing} onClick={onSave}>{saving && <span className="button-spinner" />}{saving ? "Đang lưu..." : order ? "Cập nhật đơn" : "Lưu và mở bàn"}</button>
-      {order && <button className="button complete-order-button" disabled={saving || completing} onClick={onComplete}>{completing ? <span className="button-spinner dark" /> : <Icon name="check" size={17} />}{completing ? "Đang hoàn tất..." : "Hoàn tất & trả bàn"}</button>}
+      <button className="button primary save-order-button" disabled={items.length === 0 || saving || checkingOut || (order && !dirty)} onClick={onSave}>{saving && <span className="button-spinner" />}{saving ? "Đang lưu..." : order ? dirty ? "Cập nhật đơn" : "Đơn đã được lưu" : "Lưu và mở bàn"}</button>
+      {order && <button className="button checkout-order-button" disabled={saving || checkingOut || dirty} onClick={onCheckout}><Icon name="receipt" size={17} />{dirty ? "Lưu thay đổi trước khi thanh toán" : "Thanh toán"}</button>}
     </aside>
   );
 }

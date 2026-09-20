@@ -1,9 +1,9 @@
 import Icon from "../components/common/Icon";
 import { EmptyState, ErrorState, LoadingState } from "../components/common/StateMessage";
 
-function DashboardPage({ products, productsError, productsLoading, occupiedTables, totalTables, onNavigate, onRetryProducts }) {
+function DashboardPage({ products, productsError, productsLoading, dashboardSummary, dashboardLoading, occupiedTables, totalTables, onNavigate, onRetryProducts }) {
   const stats = [
-    { label: "Doanh thu hôm nay", value: "2.500.000 ₫", note: "Tổng doanh thu trong ngày", icon: "revenue", tone: "caramel" },
+    { label: "Doanh thu hôm nay", value: dashboardLoading ? "—" : `${Number(dashboardSummary.today_revenue).toLocaleString("vi-VN")} ₫`, note: `${dashboardSummary.paid_orders_today || 0} hóa đơn đã thanh toán`, icon: "revenue", tone: "caramel" },
     { label: "Món trong thực đơn", value: productsLoading ? "—" : products.length, note: "Đang phục vụ tại quán", icon: "cup", tone: "cream" },
     { label: "Bàn đang sử dụng", value: `${occupiedTables} / ${totalTables}`, note: totalTables ? `${Math.round((occupiedTables / totalTables) * 100)}% công suất hiện tại` : "Chưa có dữ liệu bàn", icon: "chair", tone: "sage" },
   ];
