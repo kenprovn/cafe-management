@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import Icon from "../common/Icon";
+import ProductThumbnail from "../common/ProductThumbnail";
 
 function ProductCatalog({ products, loading, error, onAdd, onRetry }) {
   const [search, setSearch] = useState("");
@@ -28,7 +29,7 @@ function ProductCatalog({ products, loading, error, onAdd, onRetry }) {
         <div className="pos-product-grid">
           {filteredProducts.map((product, index) => (
             <button className="pos-product-card" key={product.id} onClick={() => onAdd(product)}>
-              <span className={`pos-product-art visual-${(index % 3) + 1}`}><Icon name="cup" size={27} /></span>
+              <ProductThumbnail className={`pos-product-art visual-${(index % 3) + 1}`} imageUrl={product.image_url} alt={product.name}><Icon name="cup" size={27} /></ProductThumbnail>
               <span className="pos-product-info"><small>THỰC ĐƠN</small><strong>{product.name}</strong><b>{Number(product.price).toLocaleString("vi-VN")} ₫</b></span>
               <span className="add-product-icon"><Icon name="plus" size={16} /></span>
             </button>

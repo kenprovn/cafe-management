@@ -1,79 +1,89 @@
-# Roast & Co. - Coffee Shop Management System
+# Roast & Co. - Hệ thống quản lý quán cà phê
 
-Roast & Co. is a university cafe-management project built around a realistic point-of-sale workflow. It combines table service, ordering, payment, invoice history, employee permissions, and management reporting in a responsive coffee-shop dashboard.
+Roast & Co. là đồ án quản lý quán cà phê dành cho môi trường đại học, được xây dựng theo quy trình bán hàng tại quầy (POS) thực tế. Hệ thống kết hợp quản lý bàn, gọi món, thanh toán, lịch sử hóa đơn, phân quyền nhân viên và báo cáo kinh doanh trong một giao diện responsive mang phong cách quán cà phê hiện đại.
 
-## Project overview
+## 1. Tổng quan dự án
 
-An employee signs in, opens a table, adds menu items, saves the order, completes checkout, and reviews the paid invoice. Administrators can additionally manage products and employees and view business reports.
+Sau khi đăng nhập, nhân viên có thể chọn bàn, mở đơn hàng, thêm món, lưu đơn, thanh toán và xem lại hóa đơn đã trả. Quản trị viên có thêm quyền quản lý sản phẩm, tài khoản nhân viên và xem các báo cáo vận hành.
 
-## Main features
+Mục tiêu của dự án là mô phỏng trọn vẹn một quy trình phục vụ tại quán, đồng thời giữ mã nguồn đủ rõ ràng để sinh viên có thể đọc, trình bày và tiếp tục phát triển.
 
-- Persistent login sessions with role-based backend authorization
-- Product and employee administration
-- Table availability and active-order management
-- POS menu search, quantity controls, notes, and stable historical pricing
-- Cash, bank-transfer, and card checkout
-- Paid invoice history, detail view, and print layout
-- Dashboard revenue based on successful payments
-- Date-based reports for revenue, products, payment methods, employees, and tables
-- Responsive desktop, tablet, and mobile interface
+## 2. Chức năng chính
 
-## User roles
+- Duy trì phiên đăng nhập và phân quyền ở cả frontend lẫn backend
+- Quản lý sản phẩm và tài khoản nhân viên
+- Theo dõi trạng thái bàn và đơn hàng đang mở
+- Tìm kiếm thực đơn, thêm món, chỉnh số lượng, ghi chú và lưu giá lịch sử
+- Thanh toán bằng tiền mặt, chuyển khoản hoặc thẻ
+- Xem lịch sử hóa đơn đã thanh toán, chi tiết hóa đơn và bản in
+- Dashboard tính doanh thu từ các giao dịch thanh toán thành công
+- Báo cáo theo khoảng ngày về doanh thu, sản phẩm, phương thức thanh toán, nhân viên và bàn
+- Giao diện responsive cho desktop, tablet và thiết bị di động
 
-| Role | Access |
+## 3. Phân quyền Admin / Staff
+
+| Vai trò | Quyền truy cập |
 | --- | --- |
-| `admin` | Dashboard, products, tables/POS, checkout, invoices, employees, and reports |
-| `staff` | Dashboard, tables/POS, checkout, and invoice viewing |
+| `admin` | Dashboard, sản phẩm, bàn/POS, thanh toán, hóa đơn, nhân viên và Reports |
+| `staff` | Dashboard, bàn/POS, thanh toán và xem hóa đơn |
 
-Product mutations, employee management, and Reports are protected on the backend and are not merely hidden in the UI.
+Các thao tác thêm, sửa, xóa sản phẩm; quản lý nhân viên; và Reports đều được bảo vệ tại backend, không chỉ đơn thuần bị ẩn trên giao diện.
 
-## Tech stack
+## 4. Công nghệ sử dụng
 
 - Frontend: React 19, Vite, JavaScript, CSS
 - Backend: Node.js, Express 5
-- Database: MySQL 8 with `mysql2`
-- Authentication: opaque session tokens; only SHA-256 token hashes are stored
-- Passwords: Node.js scrypt with per-password salts
+- Database: MySQL 8 với `mysql2`
+- Authentication: session token dạng opaque; database chỉ lưu SHA-256 hash của token
+- Password: Node.js scrypt với salt riêng cho từng mật khẩu
 
-No chart or UI component library is required. Reports use native SVG and CSS.
+Dự án không cần thư viện biểu đồ hoặc thư viện UI bên ngoài. Reports sử dụng SVG thuần và CSS.
 
-## Project structure
+## 5. Cấu trúc thư mục
 
 ```text
 cafe-management/
 ├── backend/
-│   ├── database/          # Database setup guide
-│   ├── middleware/        # Authentication and role checks
-│   ├── migrations/        # Orders, payments, and employee/session migrations
-│   ├── routes/            # Auth, orders, invoices, users, and reports
-│   ├── scripts/           # Password, demo seed, and verification scripts
-│   ├── utils/             # Validation and security helpers
+│   ├── database/          # Hướng dẫn thiết lập database
+│   ├── middleware/        # Kiểm tra xác thực và vai trò
+│   ├── migrations/        # Migration đơn hàng, thanh toán và employee/session
+│   ├── routes/            # Route auth, orders, invoices, users và reports
+│   ├── scripts/           # Script password, seed demo và kiểm thử
+│   ├── utils/             # Hàm hỗ trợ validation và bảo mật
 │   └── server.js
 ├── public/
 ├── src/
-│   ├── components/        # Shared UI and feature components
-│   ├── pages/             # Application pages
-│   ├── services/api.js    # Frontend API client
+│   ├── components/        # Component UI dùng chung và theo chức năng
+│   ├── pages/             # Các trang của ứng dụng
+│   ├── services/api.js    # API client của frontend
 │   ├── App.jsx
 │   └── App.css
 └── README.md
 ```
 
-## Requirements
+## 6. Yêu cầu hệ thống
 
-- Node.js 20 or newer
+- Node.js 20 trở lên
 - npm
-- MySQL 8.0 or newer
+- MySQL 8.0 trở lên
+- Trình duyệt hiện đại như Chrome, Edge hoặc Firefox
 
-## Installation
+## 7. Cài đặt project
 
-Install root/frontend dependencies:
+Clone project và chuyển vào thư mục dự án:
+
+```bash
+git clone <repository-url>
+cd cafe-management
+```
+
+Cài dependency ở thư mục gốc/frontend:
 
 ```bash
 npm install
 ```
 
-Install backend dependencies:
+Cài dependency cho backend:
 
 ```bash
 cd backend
@@ -81,11 +91,11 @@ npm install
 cd ..
 ```
 
-The root installation provides `mysql2`, which is shared by the current project structure.
+Phần cài đặt ở thư mục gốc cung cấp `mysql2`, được dùng chung theo cấu trúc hiện tại của project. Không cần cài thêm package ngoài các dependency đã khai báo.
 
-## Environment configuration
+## 8. Cấu hình backend và `.env`
 
-Copy `backend/.env.example` to `backend/.env` and configure the local database connection:
+Sao chép `backend/.env.example` thành `backend/.env`, sau đó điền thông tin kết nối MySQL trên máy local:
 
 ```dotenv
 DB_HOST=localhost
@@ -95,107 +105,292 @@ DB_NAME=cafe_management
 DB_PORT=3306
 ```
 
-Never commit `backend/.env` or real credentials.
+Không commit `backend/.env`, mật khẩu thật, token hoặc bất kỳ thông tin bí mật nào lên Git.
 
-The frontend uses `http://localhost:5000/api` by default. To use another backend, set this optional Vite variable before starting the frontend:
+Nếu không cấu hình riêng, frontend dùng hostname đang mở trên trình duyệt và backend port `5000` (ví dụ `http://localhost:5000/api` hoặc `http://192.168.1.10:5000/api`). Nếu backend chạy ở địa chỉ khác, đặt biến Vite tùy chọn trước khi khởi động frontend:
 
 ```dotenv
 VITE_API_BASE_URL=http://localhost:5000/api
 ```
 
-The backend listens on port `5000` by default and accepts an optional `PORT` process variable.
+Backend mặc định lắng nghe tại port `5000`. Có thể thay đổi bằng biến môi trường `PORT`.
 
-## Database setup
+## 9. Thiết lập database
 
-Follow [backend/database/README.md](backend/database/README.md). It documents the base tables, migration order, password upgrade, demo seed safeguards, and verification queries.
+Thực hiện theo tài liệu [backend/database/README.md](backend/database/README.md). Tài liệu này bao gồm:
 
-## How to run the backend
+- Tạo database và ba bảng nền tảng
+- Kiểm tra dữ liệu trước migration
+- Thứ tự migration bắt buộc
+- Nâng cấp mật khẩu cũ sang scrypt
+- Quy tắc seed dữ liệu demo
+- Các câu lệnh kiểm tra tính toàn vẹn
 
-From the project root:
+Database nền tảng phải có các bảng `users`, `products` và `cafe_tables` trước khi chạy migration.
+
+## 10. Chạy migrations theo đúng thứ tự
+
+Từ thư mục gốc project, chạy lần lượt:
+
+```bash
+mysql -u root -p cafe_management -e "source backend/migrations/001_create_orders.sql"
+mysql -u root -p cafe_management -e "source backend/migrations/002_create_payments.sql"
+mysql -u root -p cafe_management -e "source backend/migrations/003_add_employee_auth.sql"
+mysql -u root -p cafe_management -e "source backend/migrations/004_add_product_images.sql"
+```
+
+Thứ tự không được thay đổi:
+
+1. `backend/migrations/001_create_orders.sql`
+2. `backend/migrations/002_create_payments.sql`
+3. `backend/migrations/003_add_employee_auth.sql`
+4. `backend/migrations/004_add_product_images.sql`
+
+Lưu ý quan trọng:
+
+- `001_create_orders.sql` có câu lệnh đưa các bàn `Đang sử dụng` về `Trống`. Câu lệnh này chỉ được phê duyệt cho database development/demo; hãy kiểm tra kỹ trước khi dùng với dữ liệu khác.
+- Trước khi chạy `003_add_employee_auth.sql`, phải bảo đảm mọi giá trị hiện có trong `users.role` chỉ là `admin` hoặc `staff`.
+- `003_add_employee_auth.sql` chỉ nên chạy một lần vì có thao tác `ALTER TABLE` và tạo `auth_sessions`.
+- Không chạy lại migration một cách mù quáng trên database đang có dữ liệu thật.
+
+Sau migration, chuyển mật khẩu legacy sang scrypt bằng script idempotent:
+
+```bash
+cd backend
+node scripts/hashLegacyPasswords.js
+cd ..
+```
+
+Script chỉ hash những mật khẩu chưa ở định dạng scrypt mới và không hash lại mật khẩu đã được nâng cấp.
+
+## 11. Chạy frontend và backend
+
+Khởi động backend từ thư mục gốc project:
 
 ```bash
 cd backend
 node server.js
 ```
 
-The API is available at `http://localhost:5000` unless `PORT` is configured.
+API sẽ có tại `http://localhost:5000` nếu chưa cấu hình `PORT`.
 
-## How to run the frontend
-
-In a second terminal:
+Trong terminal thứ hai, từ thư mục gốc project, chạy frontend:
 
 ```bash
 npm run dev
 ```
 
-Open the local URL printed by Vite, normally `http://localhost:5173`.
+Mở URL local do Vite hiển thị, thông thường là `http://localhost:5173`.
 
-## Demo accounts
+## Truy cập từ máy khác trong cùng Wi-Fi
 
-No passwords are stored in this README or displayed on the login page. Use only the active administrator and staff accounts provisioned for the presentation database. Obtain approved demo credentials from the project owner immediately before the demonstration.
+### Trên máy chủ
 
-## Main workflow
+Đảm bảo MySQL đang chạy, sau đó khởi động backend và frontend trong hai terminal:
 
-1. Sign in as an administrator or staff member.
-2. Open **Quản lý bàn**.
-3. Select an empty table to create an order, or an occupied table to continue its order.
-4. Search the menu, add products, adjust quantities, add a note, and save.
-5. Select **Thanh toán**, choose a payment method, and confirm checkout.
-6. Review or print the generated invoice.
-7. As an administrator, review employees, products, and Reports.
+```bash
+cd backend
+node server.js
+```
 
-## API overview
+```bash
+npm run dev
+```
 
-| Area | Main endpoints |
+Chạy `ipconfig` để tìm địa chỉ IPv4 của máy chủ, ví dụ `IPv4 Address: 192.168.1.10`.
+
+### Trên máy thành viên khác
+
+Kết nối cùng Wi-Fi/LAN và mở `http://<IP-MAY-CHU>:5173`, ví dụ `http://192.168.1.10:5173`. Máy chủ phải tiếp tục chạy MySQL, backend và frontend; máy thành viên không cần Node.js, MySQL hoặc source code.
+
+Windows Firewall có thể yêu cầu cấp quyền cho Node.js. Chỉ cho phép trên **Private networks**. Nếu không kết nối được, kiểm tra Node.js đã được phép trên mạng riêng. Không mở hoặc chuyển tiếp port `5173` hay `5000` qua router/public internet.
+
+### Ảnh sản phẩm
+
+Đặt file ảnh thật trong `public/images/products/` và lưu đường dẫn dạng `/images/products/tiramisu.jpg` cho sản phẩm. Nếu đường dẫn trống hoặc ảnh tải lỗi, giao diện tự hiển thị icon mặc định.
+
+Để kiểm tra bản build production:
+
+```bash
+npm run lint
+npm run build
+```
+
+## 12. Tài khoản demo / hướng dẫn tạo tài khoản
+
+README không lưu mật khẩu demo và trang đăng nhập không hiển thị thông tin đăng nhập mẫu. Khi thuyết trình, chỉ sử dụng tài khoản `admin` và `staff` đang hoạt động trong database trình diễn. Nhận thông tin đăng nhập đã được phê duyệt từ chủ project ngay trước buổi demo.
+
+Với database mới hoàn toàn, cần tạo tài khoản quản trị viên ban đầu bằng quy trình được nhóm phê duyệt. Nếu phải khởi tạo từ dữ liệu legacy, có thể chèn một mật khẩu tạm thời bằng công cụ quản trị database, sau đó chạy ngay:
+
+```bash
+cd backend
+node scripts/hashLegacyPasswords.js
+```
+
+Không ghi mật khẩu thật vào README, source code, script được commit hoặc lịch sử terminal dùng chung. Sau khi đăng nhập bằng tài khoản quản trị viên, nên tạo và quản lý các tài khoản tiếp theo qua trang **Nhân viên**.
+
+## 13. Quy trình đặt món và thanh toán
+
+1. Đăng nhập bằng tài khoản quản trị viên hoặc nhân viên.
+2. Mở **Quản lý bàn**.
+3. Chọn bàn trống để tạo đơn mới hoặc bàn đang sử dụng để tiếp tục đơn hiện có.
+4. Tìm món, thêm sản phẩm, điều chỉnh số lượng, nhập ghi chú nếu cần và lưu đơn.
+5. Giá hiện tại của sản phẩm được chụp vào `order_items.unit_price` khi món được thêm lần đầu. Việc đổi số lượng sau đó không làm thay đổi giá lịch sử này.
+6. Chọn **Thanh toán**, chọn `CASH`, `BANK_TRANSFER` hoặc `CARD`, rồi xác nhận checkout.
+7. Backend khóa đơn, dùng `orders.total_amount` làm số tiền thanh toán, tạo đúng một bản ghi `payments`, hoàn tất đơn và trả bàn về `Trống`.
+8. Xem hoặc in hóa đơn được tạo.
+9. Với quyền `admin`, có thể tiếp tục xem sản phẩm, nhân viên và Reports.
+
+Frontend sử dụng `POST /api/orders/:orderId/checkout` làm luồng hoàn tất đơn thông thường. `PATCH /api/orders/:orderId/complete` chỉ được giữ để tương thích ngược và không phải thao tác thanh toán chính trên UI.
+
+## 14. API chính
+
+| Khu vực | Endpoint chính |
 | --- | --- |
-| Authentication | `POST /api/login`, `GET /api/auth/me`, `POST /api/auth/logout` |
-| Products | `GET /api/products`, `POST /api/products`, `PUT /api/products/:id`, `DELETE /api/products/:id` |
-| Tables and orders | `GET /api/tables`, `GET /api/tables/:tableId/active-order`, `POST /api/tables/:tableId/orders`, `PUT /api/orders/:orderId` |
-| Checkout | `POST /api/orders/:orderId/checkout` |
-| Invoices | `GET /api/invoices`, `GET /api/invoices/:invoiceId` |
-| Employees | `GET /api/users`, `POST /api/users`, `PUT /api/users/:id`, password/status patch endpoints |
-| Reports | `GET /api/reports/overview?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD` |
+| Xác thực | `POST /api/login`, `GET /api/auth/me`, `POST /api/auth/logout` |
+| Sản phẩm | `GET /api/products`, `POST /api/products`, `PUT /api/products/:id`, `DELETE /api/products/:id` |
+| Bàn | `GET /api/tables`, `PUT /api/tables/:id` |
+| Bàn và đơn hàng | `GET /api/tables/:tableId/active-order`, `POST /api/tables/:tableId/orders`, `PUT /api/orders/:orderId` |
+| Thanh toán | `POST /api/orders/:orderId/checkout` |
+| Tương thích ngược | `PATCH /api/orders/:orderId/complete` |
+| Hóa đơn | `GET /api/invoices`, `GET /api/invoices/:invoiceId` |
+| Tổng quan | `GET /api/dashboard/summary` |
+| Nhân viên | `GET /api/users`, `POST /api/users`, `PUT /api/users/:id`, `PATCH /api/users/:id/password`, `PATCH /api/users/:id/status` |
+| Báo cáo | `GET /api/reports/overview?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD` |
 
-All protected requests use `Authorization: Bearer <session-token>`. Do not log or share session tokens.
+Mọi request được bảo vệ đều gửi `Authorization: Bearer <session-token>`. Không ghi log, commit hoặc chia sẻ session token.
 
-## Database tables
+## 15. Các bảng database
 
-- `users`: employee identity, role, status, and password hash
-- `auth_sessions`: hashed session tokens and expiration times
-- `products`: current menu names and prices
-- `cafe_tables`: cafe table numbers and availability
-- `orders`: table order header, status, totals, timestamps, and creator
-- `order_items`: historical product-name, unit-price, quantity, and subtotal snapshots
-- `payments`: one successful payment per paid order
+- `users`: định danh nhân viên, vai trò, trạng thái và password hash
+- `auth_sessions`: session token đã hash và thời gian hết hạn
+- `products`: tên món, giá hiện tại và đường dẫn ảnh tùy chọn trong thực đơn
+- `cafe_tables`: số bàn và trạng thái bàn
+- `orders`: thông tin chung của đơn theo bàn, trạng thái, tổng tiền, thời gian và người tạo
+- `order_items`: snapshot lịch sử của tên món, đơn giá, số lượng và thành tiền
+- `payments`: đúng một giao dịch thanh toán thành công cho mỗi đơn đã trả
 
-## Reports overview
+Các khóa ngoại từ `orders.created_by` và `payments.paid_by` giữ lại lịch sử nhân viên. Vì vậy tài khoản nhân viên được vô hiệu hóa thay vì xóa vật lý.
 
-Reports are administrator-only. They use successful `payments` as the financial source of truth and Vietnam calendar time (`UTC+7`). Available metrics include summary revenue, paid invoices, average invoice value, quantity sold, daily revenue, top products, payment methods, employee transactions, and table performance.
+## 16. Dashboard và Reports
 
-## Screenshots
+Dashboard hiển thị tình trạng vận hành và doanh thu trong ngày. Doanh thu chỉ lấy từ các bản ghi thanh toán thành công trong `payments`; đơn có trạng thái hoàn tất nhưng không có payment không được tính là doanh thu.
 
-Add final submission screenshots here:
+Reports chỉ dành cho `admin` và hỗ trợ các preset **Hôm nay**, **7 ngày**, **30 ngày**, **Tháng này** cùng khoảng ngày tùy chọn. Tất cả phép tổng hợp được thực hiện tại backend/database, sử dụng ngày lịch Việt Nam (`UTC+7`) với điều kiện:
 
-- Login and dashboard
-- Table map and POS order
-- Checkout and invoice print view
-- Employee management
-- Reports on desktop and mobile
+```text
+paid_at >= date_from 00:00:00
+paid_at < day-after-date_to 00:00:00
+```
 
-## Known limitations
+Các chỉ số gồm:
 
-- The project is intended for a single cafe location and a university demonstration environment.
-- Product categories are not persisted, so category reports are intentionally unavailable.
-- The frontend uses local storage for its opaque session token; production deployments should prefer secure HTTP-only cookies and HTTPS.
-- Invoice and employee lists are not paginated because the demonstration dataset is small.
-- A fresh database still requires an approved initial administrator account.
-- No refund, cancellation, stock, or ingredient-management workflow is included.
+- Tổng doanh thu
+- Số hóa đơn đã thanh toán
+- Giá trị hóa đơn trung bình
+- Tổng số lượng sản phẩm đã bán
+- Xu hướng doanh thu theo ngày, bao gồm ngày có giá trị bằng 0
+- Top sản phẩm theo số lượng và doanh thu
+- Thống kê phương thức thanh toán
+- Giao dịch theo nhân viên
+- Hiệu quả theo bàn
 
-## Future improvements
+Tên sản phẩm, số lượng, đơn giá và thành tiền trong báo cáo được lấy từ snapshot lịch sử của `order_items`, không phụ thuộc vào tên hoặc giá sản phẩm hiện tại.
 
-- Persist product categories and add category reports
-- Add pagination and CSV/PDF report export
-- Add inventory and ingredient tracking
-- Add refund and order-cancellation auditing
-- Add automated API and browser test suites
-- Move production authentication to secure cookies and configure restricted CORS
+## 17. Seed dữ liệu demo
+
+Script `backend/scripts/seedDemoHistory.js` tạo dữ liệu lịch sử xác định trước cho mục đích trình diễn Reports:
+
+- 75 đơn đã thanh toán trong khoảng `2026-08-24` đến `2026-09-20`
+- 182 dòng `order_items`
+- Tổng số lượng 243 sản phẩm
+- Tổng doanh thu demo 9.519.000 VND
+- Mỗi đơn có marker `[DEMO-REPORT-2026]`
+- Đúng một payment cho mỗi đơn
+- Sử dụng hai tài khoản nhân viên đang hoạt động, 10 bàn và 38 sản phẩm đã cấu hình
+
+Chỉ chạy sau khi đã đọc phần cảnh báo trong [backend/database/README.md](backend/database/README.md):
+
+```bash
+cd backend
+node scripts/seedDemoHistory.js
+```
+
+Script sẽ dừng trước khi chèn dữ liệu nếu marker đã tồn tại. Không chạy script này trên production hoặc database có cấu trúc/dữ liệu không đúng với bộ demo đã được phê duyệt.
+
+## 18. Các script verify
+
+Khởi động backend trước khi chạy các script kiểm thử API.
+
+Kiểm tra Reports và đối soát dữ liệu demo:
+
+```bash
+cd backend
+node scripts/verifyReports.js
+```
+
+Kiểm tra authentication, employee permissions và quy trình POS cần bốn biến môi trường, không lưu các giá trị thật trong file được theo dõi bởi Git:
+
+```text
+VERIFY_ADMIN_USERNAME
+VERIFY_ADMIN_PASSWORD
+VERIFY_STAFF_USERNAME
+VERIFY_STAFF_PASSWORD
+```
+
+Sau khi đặt các biến trên trong process environment, chạy:
+
+```bash
+cd backend
+node scripts/verifyEmployeeAuth.js
+```
+
+`verifyEmployeeAuth.js` thực hiện các thao tác ghi để kiểm tra tạo/vô hiệu hóa tài khoản và một quy trình POS/checkout. Chỉ chạy trên database development/demo, không chạy trên production.
+
+Các kiểm tra chất lượng mã nguồn:
+
+```bash
+npm run lint
+npm run build
+git diff --check
+```
+
+## 19. Hạn chế hiện tại
+
+- Project được thiết kế cho một chi nhánh quán cà phê và môi trường trình diễn đại học.
+- Danh mục sản phẩm chưa được lưu trong database nên chưa có báo cáo theo danh mục.
+- Frontend lưu opaque session token trong local storage; hệ thống production nên dùng secure HTTP-only cookie và HTTPS.
+- Danh sách hóa đơn và nhân viên chưa phân trang vì dữ liệu demo còn nhỏ.
+- Database mới hoàn toàn vẫn cần một tài khoản quản trị viên ban đầu đã được phê duyệt.
+- Chưa có quy trình hoàn tiền, hủy đơn có audit, quản lý tồn kho hoặc nguyên liệu.
+- Migration hiện được chạy thủ công và cần backup/kiểm tra trước khi dùng ngoài môi trường demo.
+- Chưa có test suite tự động hoàn chỉnh cho API và trình duyệt.
+
+## 20. Hướng phát triển
+
+- Lưu category sản phẩm và bổ sung báo cáo theo category
+- Thêm pagination và xuất báo cáo CSV/PDF
+- Quản lý tồn kho và định lượng nguyên liệu
+- Bổ sung hoàn tiền và audit việc hủy đơn
+- Xây dựng test suite tự động cho API và trình duyệt
+- Chuyển authentication production sang secure cookie và giới hạn CORS
+- Bổ sung backup, restore và quy trình triển khai database
+
+## 21. Ảnh chụp màn hình
+
+Thêm ảnh chụp hoàn thiện của đồ án vào đây trước khi nộp:
+
+- Login và Dashboard
+- Sơ đồ bàn và màn hình POS
+- Checkout và bản in hóa đơn
+- Quản lý nhân viên
+- Reports trên desktop
+- Reports hoặc POS trên mobile/tablet
+
+Ví dụ cấu trúc có thể dùng sau khi thêm ảnh vào thư mục phù hợp:
+
+```markdown
+![Dashboard](docs/screenshots/dashboard.png)
+![POS](docs/screenshots/pos.png)
+![Reports](docs/screenshots/reports.png)
+```

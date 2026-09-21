@@ -65,7 +65,7 @@ function App() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ name: "", price: "" });
+  const [formData, setFormData] = useState({ name: "", price: "", image_url: "" });
   const [formError, setFormError] = useState("");
   const [formLoading, setFormLoading] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
@@ -225,7 +225,7 @@ function App() {
   const handleAdd = () => {
     setProductNotice("");
     setEditingId(null);
-    setFormData({ name: "", price: "" });
+    setFormData({ name: "", price: "", image_url: "" });
     setFormError("");
     setShowForm(true);
   };
@@ -233,7 +233,7 @@ function App() {
   const handleEdit = (product) => {
     setProductNotice("");
     setEditingId(product.id);
-    setFormData({ name: product.name, price: product.price });
+    setFormData({ name: product.name, price: product.price, image_url: product.image_url || "" });
     setFormError("");
     setShowForm(true);
   };
@@ -257,6 +257,7 @@ function App() {
       return;
     }
     const normalizedName = formData.name.trim().replace(/\s+/g, " ").normalize("NFC");
+    const normalizedImageUrl = formData.image_url.trim() || null;
     const duplicate = products.some((product) => product.id !== editingId && productNameKey(product.name) === productNameKey(normalizedName));
     if (duplicate) {
       setFormError("Tên món đã tồn tại trong thực đơn.");
@@ -266,11 +267,11 @@ function App() {
     setFormLoading(true);
     try {
       const isEditing = editingId !== null;
-      if (isEditing) await updateProduct(editingId, { name: normalizedName, price });
-      else await createProduct({ name: normalizedName, price });
+      if (isEditing) await updateProduct(editingId, { name: normalizedName, price, image_url: normalizedImageUrl });
+      else await createProduct({ name: normalizedName, price, image_url: normalizedImageUrl });
       setShowForm(false);
       setEditingId(null);
-      setFormData({ name: "", price: "" });
+      setFormData({ name: "", price: "", image_url: "" });
       await fetchProducts();
       setProductNotice(isEditing ? "Đã cập nhật món thành công." : "Đã thêm món mới vào thực đơn.");
     } catch (error) {

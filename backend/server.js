@@ -10,6 +10,7 @@ const userRoutes = require("./routes/users");
 const {
   parseProductId,
   productNameKey,
+  validateProductImageUrl,
   validateProductName,
   validateProductPrice,
 } = require("./utils/productValidation");
@@ -17,8 +18,34 @@ const {
 const app = express();
 const pool = db.promise();
 const PORT = Number(process.env.PORT) || 5000;
+const HOST = "0.0.0.0";
 
-app.use(cors());
+function isAllowedDevelopmentOrigin(origin) {
+  if (!origin) return true;
+
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== "http:" || url.port !== "5173") return false;
+    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return true;
+
+    const octets = url.hostname.split(".").map(Number);
+    if (octets.length !== 4 || octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)) {
+      return false;
+    }
+
+    return octets[0] === 10
+      || (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31)
+      || (octets[0] === 192 && octets[1] === 168);
+  } catch {
+    return false;
+  }
+}
+
+app.use(cors({
+  origin(origin, callback) {
+    callback(null, isAllowedDevelopmentOrigin(origin));
+  },
+}));
 app.use(express.json());
 app.use("/api", authRoutes);
 app.use("/api", requireAuth, orderRoutes);
@@ -39,7 +66,7 @@ app.get("/", (req, res) => {
 ========================= */
 app.get("/api/products", requireAuth, async (req, res) => {
   try {
-    const [products] = await pool.execute("SELECT id, name, price FROM products ORDER BY id");
+    const [products] = await pool.execute("SELECT id, name, price, image_url FROM products ORDER BY id");
     return res.json(products);
   } catch (error) {
     console.error("Lỗi lấy danh sách món:", error.message);
@@ -53,7 +80,8 @@ app.get("/api/products", requireAuth, async (req, res) => {
 app.post("/api/products", requireAuth, requireRole("admin"), async (req, res) => {
   const name = validateProductName(req.body.name);
   const price = validateProductPrice(req.body.price);
-  const validationError = name.error || price.error;
+  const imageUrl = validateProductImageUrl(req.body.image_url);
+  const validationError = name.error || price.error || imageUrl.error;
   if (validationError) return res.status(400).json({ message: validationError, code: "VALIDATION_ERROR" });
 
   const connection = await pool.getConnection();
@@ -65,8 +93,8 @@ app.post("/api/products", requireAuth, requireRole("admin"), async (req, res) =>
       return res.status(409).json({ message: "Tên món đã tồn tại trong thực đơn", code: "PRODUCT_NAME_EXISTS" });
     }
     const [result] = await connection.execute(
-      "INSERT INTO products (name, price) VALUES (?, ?)",
-      [name.value, price.value],
+      "INSERT INTO products (name, price, image_url) VALUES (?, ?, ?)",
+      [name.value, price.value, imageUrl.value],
     );
     await connection.commit();
     return res.status(201).json({ message: "Thêm món thành công", id: result.insertId });
@@ -86,7 +114,8 @@ app.put("/api/products/:id", requireAuth, requireRole("admin"), async (req, res)
   const id = parseProductId(req.params.id);
   const name = validateProductName(req.body.name);
   const price = validateProductPrice(req.body.price);
-  const validationError = id.error || name.error || price.error;
+  const imageUrl = validateProductImageUrl(req.body.image_url);
+  const validationError = id.error || name.error || price.error || imageUrl.error;
   if (validationError) return res.status(400).json({ message: validationError, code: "VALIDATION_ERROR" });
 
   const connection = await pool.getConnection();
@@ -102,8 +131,8 @@ app.put("/api/products/:id", requireAuth, requireRole("admin"), async (req, res)
       return res.status(409).json({ message: "Tên món đã tồn tại trong thực đơn", code: "PRODUCT_NAME_EXISTS" });
     }
     await connection.execute(
-      "UPDATE products SET name = ?, price = ? WHERE id = ?",
-      [name.value, price.value, id.value],
+      "UPDATE products SET name = ?, price = ?, image_url = ? WHERE id = ?",
+      [name.value, price.value, imageUrl.value, id.value],
     );
     await connection.commit();
     return res.json({ message: "Cập nhật món thành công" });
@@ -201,6 +230,7 @@ app.use("/api", userRoutes);
 /* =========================
    START SERVER
 ========================= */
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+  console.log(`🌐 Trong cùng Wi-Fi/LAN, dùng IPv4 của máy chủ với port ${PORT}`);
 });

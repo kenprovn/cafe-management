@@ -1,4 +1,5 @@
 import Icon from "../components/common/Icon";
+import ProductThumbnail from "../components/common/ProductThumbnail";
 import { EmptyState, ErrorState, LoadingState } from "../components/common/StateMessage";
 
 function DashboardPage({ products, productsError, productsLoading, dashboardSummary, dashboardLoading, dashboardError, occupiedTables, totalTables, onNavigate, onRetryProducts, onRetryDashboard, canManageProducts }) {
@@ -17,7 +18,7 @@ function DashboardPage({ products, productsError, productsLoading, dashboardSumm
         {productsLoading && <LoadingState label="Đang tải thực đơn..." compact />}
         {!productsLoading && productsError && <ErrorState message={productsError} onRetry={onRetryProducts} />}
         {!productsLoading && !productsError && products.length === 0 && <EmptyState title="Thực đơn đang trống" message="Thêm món đầu tiên để bắt đầu phục vụ." actionLabel="Thêm món" onAction={() => onNavigate("products")} />}
-        {!productsLoading && !productsError && products.length > 0 && <div className="featured-grid">{products.slice(0, 3).map((product, index) => <article className="featured-card" key={product.id}><div className={`product-visual visual-${(index % 3) + 1}`}><Icon name="cup" size={34} /><span>Roast & Co.</span></div><div className="featured-details"><span className="category-label">THỰC ĐƠN</span><h3>{product.name}</h3><p>{Number(product.price).toLocaleString("vi-VN")} ₫</p></div></article>)}</div>}
+        {!productsLoading && !productsError && products.length > 0 && <div className="featured-grid">{products.slice(0, 3).map((product, index) => <article className="featured-card" key={product.id}><ProductThumbnail className={`product-visual visual-${(index % 3) + 1}`} imageUrl={product.image_url} alt={product.name}><Icon name="cup" size={34} /><span>Roast & Co.</span></ProductThumbnail><div className="featured-details"><span className="category-label">THỰC ĐƠN</span><h3>{product.name}</h3><p>{Number(product.price).toLocaleString("vi-VN")} ₫</p></div></article>)}</div>}
       </section>
     </div>
   );
