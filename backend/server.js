@@ -5,6 +5,7 @@ const { requireAuth, requireRole } = require("./middleware/auth");
 const authRoutes = require("./routes/auth");
 const orderRoutes = require("./routes/orders");
 const invoiceRoutes = require("./routes/invoices");
+const reportRoutes = require("./routes/reports");
 const userRoutes = require("./routes/users");
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use("/api", authRoutes);
 app.use("/api", requireAuth, orderRoutes);
 app.use("/api", requireAuth, invoiceRoutes);
+app.use("/api", reportRoutes);
 
 /* =========================
    GET - Kiểm tra server

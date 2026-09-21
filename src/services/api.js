@@ -70,6 +70,11 @@ export const getInvoices = ({ search = "", dateFrom = "", dateTo = "" } = {}) =>
 export const getInvoice = (invoiceId) => request(`/invoices/${invoiceId}`);
 export const getDashboardSummary = () => request("/dashboard/summary");
 
+export const getReportOverview = ({ dateFrom, dateTo }) => {
+  const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
+  return request(`/reports/overview?${params.toString()}`);
+};
+
 export const getUsers = ({ search = "", role = "", status = "" } = {}) => {
   const params = new URLSearchParams();
   if (search) params.set("search", search);

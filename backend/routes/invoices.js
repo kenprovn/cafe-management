@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("../db");
 const { parsePositiveId } = require("../utils/orderValidation");
 const { validateDate, validatePaymentMethod } = require("../utils/paymentValidation");
+const { setVietnamTimezone } = require("../utils/reportValidation");
 
 const router = express.Router();
 const pool = db.promise();
@@ -165,8 +166,10 @@ router.get("/invoices/:invoiceId", async (req, res) => {
 });
 
 router.get("/dashboard/summary", async (req, res) => {
+  const connection = await pool.getConnection();
   try {
-    const [rows] = await pool.execute(
+    await setVietnamTimezone(connection);
+    const [rows] = await connection.execute(
       `SELECT COALESCE(SUM(amount), 0) AS today_revenue,
               COUNT(*) AS paid_orders_today
        FROM payments
@@ -176,6 +179,8 @@ router.get("/dashboard/summary", async (req, res) => {
     return res.json(rows[0]);
   } catch (error) {
     return sendError(res, error);
+  } finally {
+    connection.release();
   }
 });
 

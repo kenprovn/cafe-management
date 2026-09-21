@@ -11,6 +11,7 @@ import InvoicesPage from "./pages/InvoicesPage";
 import LoginPage from "./pages/LoginPage";
 import OrderPage from "./pages/OrderPage";
 import ProductsPage from "./pages/ProductsPage";
+import ReportsPage from "./pages/ReportsPage";
 import TablesPage from "./pages/TablesPage";
 import {
   checkoutOrder,
@@ -42,6 +43,7 @@ const PAGE_DETAILS = {
   invoices: { title: "Hóa đơn", subtitle: "Tra cứu lịch sử thanh toán của quán" },
   invoiceDetail: { title: "Chi tiết hóa đơn", subtitle: "Thông tin thanh toán và các món đã phục vụ" },
   employees: { title: "Quản lý nhân viên", subtitle: "Tài khoản, vai trò và trạng thái đội ngũ" },
+  reports: { title: "Báo cáo", subtitle: "Phân tích doanh thu và hiệu quả vận hành" },
 };
 
 function App() {
@@ -393,6 +395,7 @@ function App() {
           {currentPage === "invoices" && <InvoicesPage invoices={invoices} loading={invoicesLoading} error={invoicesError} onSearch={fetchInvoiceList} onRetry={() => fetchInvoiceList(invoiceFilters)} onOpen={handleOpenInvoice} />}
           {currentPage === "invoiceDetail" && <InvoiceDetailPage invoice={selectedInvoice} loading={invoiceLoading} error={invoiceError} onBack={() => { setCurrentPage("invoices"); fetchInvoiceList(invoiceFilters); }} onRetry={() => handleOpenInvoice(selectedInvoiceId)} />}
           {currentPage === "employees" && user.role === "admin" && <EmployeesPage currentUser={user} />}
+          {currentPage === "reports" && user.role === "admin" && <ReportsPage />}
         </main>
       </div>
       {showForm && <ProductModal editing={editingId !== null} error={formError} formData={formData} loading={formLoading} onChange={(event) => setFormData({ ...formData, [event.target.name]: event.target.value })} onClose={closeForm} onSubmit={handleSubmit} />}
