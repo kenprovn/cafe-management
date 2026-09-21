@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Icon from "../common/Icon";
 
 function EmployeeModal({ mode, employee, error, loading, onClose, onSubmit }) {
@@ -14,6 +14,12 @@ function EmployeeModal({ mode, employee, error, loading, onClose, onSubmit }) {
     edit: ["CHỈNH SỬA", "Cập nhật nhân viên"],
     password: ["BẢO MẬT", "Đặt lại mật khẩu"],
   };
+
+  useEffect(() => {
+    const handleEscape = (event) => event.key === "Escape" && !loading && onClose();
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [loading, onClose]);
 
   const submit = (event) => {
     event.preventDefault();
@@ -38,7 +44,7 @@ function EmployeeModal({ mode, employee, error, loading, onClose, onSubmit }) {
           {mode !== "password" && <div className="field-group"><label htmlFor="employee-full-name">Họ và tên</label><input id="employee-full-name" autoFocus={mode === "edit"} value={form.full_name} onChange={(event) => setForm({ ...form, full_name: event.target.value })} placeholder="Nhập họ và tên" maxLength="100" /></div>}
           {mode !== "password" && <div className="field-group"><label htmlFor="employee-role">Vai trò</label><select id="employee-role" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}><option value="staff">Nhân viên</option><option value="admin">Quản trị viên</option></select></div>}
           {(mode === "create" || mode === "password") && <div className="field-group"><label htmlFor="employee-password">{mode === "password" ? "Mật khẩu mới" : "Mật khẩu ban đầu"}</label><input id="employee-password" autoFocus={mode === "password"} type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} autoComplete="new-password" placeholder="Tối thiểu 8 ký tự" minLength="8" maxLength="128" /></div>}
-          {error && <div className="form-error"><Icon name="alert" size={17} />{error}</div>}
+          {error && <div className="form-error" role="alert"><Icon name="alert" size={17} />{error}</div>}
           <div className="modal-actions"><button className="button ghost" type="button" onClick={onClose} disabled={loading}>Hủy</button><button className="button primary" type="submit" disabled={loading}>{loading && <span className="button-spinner" />}{loading ? "Đang lưu..." : mode === "create" ? "Tạo tài khoản" : mode === "password" ? "Đặt lại mật khẩu" : "Lưu thay đổi"}</button></div>
         </form>
       </section>

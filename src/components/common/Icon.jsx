@@ -12,7 +12,6 @@ const paths = {
   report: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   logout: <><path d="M10 17l5-5-5-5M15 12H3" /><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /></>,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
-  bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
   revenue: <><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></>,
   cup: <><path d="M5 8h12v5a6 6 0 0 1-12 0V8Z" /><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M6 21h10M8 4v1M12 3v2M16 4v1" /></>,
   chair: <><path d="M6 12h12v6H6zM8 18v3M16 18v3M7 12V7a5 5 0 0 1 10 0v5" /></>,

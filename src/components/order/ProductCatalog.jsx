@@ -29,7 +29,7 @@ function ProductCatalog({ products, loading, error, onAdd, onRetry }) {
           {filteredProducts.map((product, index) => (
             <button className="pos-product-card" key={product.id} onClick={() => onAdd(product)}>
               <span className={`pos-product-art visual-${(index % 3) + 1}`}><Icon name="cup" size={27} /></span>
-              <span className="pos-product-info"><small>CÀ PHÊ</small><strong>{product.name}</strong><b>{Number(product.price).toLocaleString("vi-VN")} ₫</b></span>
+              <span className="pos-product-info"><small>THỰC ĐƠN</small><strong>{product.name}</strong><b>{Number(product.price).toLocaleString("vi-VN")} ₫</b></span>
               <span className="add-product-icon"><Icon name="plus" size={16} /></span>
             </button>
           ))}

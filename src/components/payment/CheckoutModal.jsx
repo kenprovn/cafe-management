@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Icon from "../common/Icon";
 
 const methods = [
@@ -11,6 +11,12 @@ const currency = (value) => `${Number(value).toLocaleString("vi-VN")} ₫`;
 
 function CheckoutModal({ order, table, user, loading, error, onClose, onConfirm }) {
   const [paymentMethod, setPaymentMethod] = useState("CASH");
+
+  useEffect(() => {
+    const handleEscape = (event) => event.key === "Escape" && !loading && onClose();
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [loading, onClose]);
 
   return (
     <div className="modal-overlay checkout-overlay" onMouseDown={(event) => event.target === event.currentTarget && !loading && onClose()}>
@@ -34,7 +40,7 @@ function CheckoutModal({ order, table, user, loading, error, onClose, onConfirm 
           </div>
         </div>
 
-        {error && <div className="checkout-error"><Icon name="alert" size={17} />{error}</div>}
+        {error && <div className="checkout-error" role="alert"><Icon name="alert" size={17} />{error}</div>}
         <footer className="checkout-actions"><button className="button ghost" onClick={onClose} disabled={loading}>Quay lại</button><button className="button primary" onClick={() => onConfirm(paymentMethod)} disabled={loading}>{loading && <span className="button-spinner" />}{loading ? "Đang xử lý..." : `Thanh toán ${currency(order.total_amount)}`}</button></footer>
       </section>
     </div>

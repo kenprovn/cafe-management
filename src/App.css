@@ -18,7 +18,9 @@
 }
 
 button,
-input { font: inherit; }
+input,
+select,
+textarea { font: inherit; }
 
 button { -webkit-tap-highlight-color: transparent; }
 
@@ -37,15 +39,12 @@ button { -webkit-tap-highlight-color: transparent; }
 .brand .brand-mark, .login-brand .brand-mark { color: #fff; }
 .sidebar-nav { display: flex; flex-direction: column; gap: 6px; margin-top: 46px; }
 .nav-label { padding: 0 14px 8px; color: rgba(255, 255, 255, 0.37); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; }
-.secondary-label { margin-top: 24px; }
 .nav-item { position: relative; width: 100%; display: flex; align-items: center; gap: 13px; padding: 12px 14px; color: rgba(255, 255, 255, 0.68); text-align: left; border: 0; border-radius: 10px; background: transparent; cursor: pointer; transition: 160ms ease; }
 .nav-item::before { content: ""; position: absolute; left: -18px; width: 3px; height: 24px; border-radius: 0 3px 3px 0; background: transparent; }
 .nav-item:hover:not(:disabled) { color: #fff; background: rgba(255, 255, 255, 0.07); }
 .nav-item.active { color: #fff; background: rgba(185, 120, 63, 0.2); }
 .nav-item.active::before { background: #cf925a; }
 .nav-item span { flex: 1; font-size: 14px; font-weight: 600; }
-.nav-item small { padding: 3px 6px; color: rgba(255, 255, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 5px; font-size: 9px; text-transform: uppercase; }
-.nav-item.disabled { cursor: not-allowed; opacity: 0.58; }
 .sidebar-footer { display: flex; align-items: center; gap: 9px; padding: 17px 7px 0; margin-top: auto; border-top: 1px solid rgba(255, 255, 255, 0.09); }
 .sidebar-user, .header-user { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10px; }
 .sidebar-user div, .header-user div { min-width: 0; }
@@ -67,8 +66,6 @@ button { -webkit-tap-highlight-color: transparent; }
 .date-block strong { display: block; color: #5d554f; font-size: 11px; text-transform: capitalize; }
 .icon-button { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; color: #756a64; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; transition: 150ms ease; }
 .icon-button:hover { color: var(--coffee); border-color: #d9c7b8; background: #faf7f3; }
-.notification-button { position: relative; }
-.notification-button > span { position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; border: 1px solid #fff; border-radius: 50%; background: var(--caramel); }
 .header-user { min-width: 145px; flex: initial; }
 .header-user strong { color: var(--text); font-size: 12px; }
 .header-user span:not(.avatar) { color: var(--muted); }
@@ -221,15 +218,13 @@ button { -webkit-tap-highlight-color: transparent; }
 .login-intro { margin: 0 0 30px; color: var(--muted); font-size: 12px; }
 .login-submit { width: 100%; height: 46px; margin-top: 4px; }
 .login-submit svg:last-child { margin-left: auto; }
-.demo-account { margin-top: 27px; padding: 15px 17px; border: 1px dashed #dbcbbb; border-radius: 10px; background: #fdf9f4; }
-.demo-account > span { display: block; margin-bottom: 9px; color: var(--caramel-dark); font-size: 8px; font-weight: 800; letter-spacing: 1.2px; }
-.demo-account div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.demo-account p { margin: 0; color: var(--muted); font-size: 9px; }
-.demo-account strong { display: block; margin-bottom: 3px; color: #5b4e46; font-size: 9px; }
 
 /* POS ordering */
 .page-notice { display: flex; align-items: center; gap: 9px; padding: 12px 15px; border-radius: 10px; font-size: 12px; font-weight: 700; }
 .page-notice.success { color: var(--success); border: 1px solid #cfe2d4; background: var(--success-bg); }
+.page-notice.error { color: var(--danger); border: 1px solid #f0d4d0; background: var(--danger-bg); }
+.page-notice > span { flex: 1; }
+.page-notice .button { min-height: 32px; padding: 6px 10px; }
 .order-page { display: flex; flex-direction: column; gap: 16px; }
 .order-page-toolbar { display: flex; align-items: center; justify-content: space-between; }
 .order-page-toolbar > div { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; font-weight: 700; }
@@ -289,15 +284,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .cart-total { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px 10px; border-top: 1px solid var(--line); }
 .cart-total span { color: var(--muted); font-size: 11px; font-weight: 700; }
 .cart-total strong { color: var(--coffee); font-family: Georgia, serif; font-size: 21px; }
-.save-order-button, .complete-order-button { width: calc(100% - 40px); margin: 0 20px 10px; }
-.complete-order-button { margin-bottom: 20px; color: var(--success); border: 1px solid #c9ddce; background: var(--success-bg); }
-.complete-order-button:hover:not(:disabled) { background: #dcebe0; }
+.save-order-button { width: calc(100% - 40px); margin: 0 20px 10px; }
 .button-spinner.dark { border-color: rgba(77, 118, 92, 0.25); border-top-color: var(--success); }
-.confirm-modal { max-width: 420px; text-align: center; }
-.confirm-icon { width: 58px; height: 58px; display: grid; place-items: center; margin: 0 auto 15px; color: var(--success); border-radius: 50%; background: var(--success-bg); }
-.confirm-modal h2 { margin: 0 0 8px; color: var(--text); font-family: Georgia, serif; font-size: 23px; }
-.confirm-modal > p { max-width: 330px; margin: 0 auto 5px; color: var(--muted); font-size: 11px; line-height: 1.65; }
-.confirm-modal .modal-actions { justify-content: center; margin-top: 20px; }
 .checkout-order-button { width: calc(100% - 40px); margin: 0 20px 20px; color: #fff; border: 1px solid var(--caramel); background: var(--caramel); }
 .checkout-order-button:hover:not(:disabled) { background: var(--caramel-dark); }
 
@@ -343,6 +331,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .invoice-history-table td:first-child strong { display: block; color: var(--coffee); }
 .invoice-history-table td:first-child span { display: block; margin-top: 3px; color: var(--muted); font-size: 8px; }
 .clickable-row { cursor: pointer; }
+.clickable-row:focus-visible { position: relative; outline: 3px solid rgba(185, 120, 63, 0.3); outline-offset: -3px; }
 .payment-badge { display: inline-flex; padding: 5px 8px; border-radius: 999px; font-size: 8px; font-weight: 800; }
 .payment-badge.cash { color: #53735b; background: #e6efe8; }
 .payment-badge.bank_transfer { color: #526b8a; background: #e8eef6; }
@@ -417,7 +406,7 @@ button { -webkit-tap-highlight-color: transparent; }
 
 @media (max-width: 650px) {
   .topbar { min-height: 74px; }
-  .topbar-title p, .header-user, .notification-button { display: none; }
+  .topbar-title p, .header-user { display: none; }
   .topbar h1 { font-size: 22px; }
   .page-content { padding: 18px 15px 32px; }
   .page-stack { gap: 16px; }
@@ -446,7 +435,6 @@ button { -webkit-tap-highlight-color: transparent; }
   .mobile-login-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 45px; color: var(--coffee); font-family: Georgia, serif; font-size: 18px; }
   .mobile-login-brand .brand-mark { width: 38px; height: 38px; flex-basis: 38px; }
   .login-card h2 { font-size: 27px; }
-  .demo-account div { grid-template-columns: 1fr; gap: 8px; }
   .order-page-toolbar { align-items: flex-start; }
   .pos-layout { grid-template-columns: 1fr; }
   .pos-catalog { min-height: 480px; padding: 17px; }
@@ -687,6 +675,15 @@ button { -webkit-tap-highlight-color: transparent; }
   margin-top: 24px;
 }
 
+.confirm-error { margin: 18px 0 0; text-align: left; }
+
+.product-filters { display: grid; grid-template-columns: minmax(260px, 1fr) 220px; align-items: end; gap: 12px; margin: 0 0 20px; }
+.product-filters .search-box { margin: 0; }
+.product-filters > label:last-child > span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; }
+.product-filters select { width: 100%; height: 43px; padding: 0 36px 0 12px; color: var(--text); border: 1px solid #ddd5cf; border-radius: 10px; background: #fff; outline: none; }
+.product-filters select:focus { border-color: var(--caramel); box-shadow: 0 0 0 3px rgba(185, 120, 63, 0.1); }
+.product-notice { margin-bottom: 20px; }
+
 .confirm-icon {
   width: 52px;
   height: 52px;
@@ -744,6 +741,10 @@ button { -webkit-tap-highlight-color: transparent; }
 
   .employees-page .panel-header .button {
     width: 100%;
+  }
+
+  .product-filters {
+    grid-template-columns: 1fr;
   }
 }
 

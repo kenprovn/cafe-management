@@ -14,9 +14,9 @@ function LoginPage({ loginData, setLoginData, loginError, loading, onSubmit }) {
           <div className="mobile-login-brand"><span className="brand-mark"><Icon name="cup" size={23} /></span><strong>Roast & Co.</strong></div>
           <span className="eyebrow">CHÀO MỪNG TRỞ LẠI</span><h2>Đăng nhập tài khoản</h2><p className="login-intro">Nhập thông tin của bạn để tiếp tục quản lý cửa hàng.</p>
           <form onSubmit={onSubmit}>
-            <div className="field-group"><label htmlFor="username">Tên đăng nhập</label><input id="username" type="text" autoComplete="username" value={loginData.username} onChange={(event) => setLoginData({ ...loginData, username: event.target.value })} placeholder="Nhập tên đăng nhập" /></div>
-            <div className="field-group"><label htmlFor="password">Mật khẩu</label><input id="password" type="password" autoComplete="current-password" value={loginData.password} onChange={(event) => setLoginData({ ...loginData, password: event.target.value })} placeholder="Nhập mật khẩu" /></div>
-            {loginError && <div className="form-error"><Icon name="alert" size={17} />{loginError}</div>}
+            <div className="field-group"><label htmlFor="username">Tên đăng nhập</label><input id="username" required type="text" autoComplete="username" value={loginData.username} onChange={(event) => setLoginData({ ...loginData, username: event.target.value })} placeholder="Nhập tên đăng nhập" aria-invalid={Boolean(loginError)} aria-describedby={loginError ? "login-error" : undefined} /></div>
+            <div className="field-group"><label htmlFor="password">Mật khẩu</label><input id="password" required type="password" autoComplete="current-password" value={loginData.password} onChange={(event) => setLoginData({ ...loginData, password: event.target.value })} placeholder="Nhập mật khẩu" aria-invalid={Boolean(loginError)} aria-describedby={loginError ? "login-error" : undefined} /></div>
+            {loginError && <div className="form-error" id="login-error" role="alert"><Icon name="alert" size={17} />{loginError}</div>}
             <button className="button primary login-submit" type="submit" disabled={loading}>{loading && <span className="button-spinner" />}{loading ? "Đang đăng nhập..." : "Đăng nhập"}<Icon name="arrow" size={18} /></button>
           </form>
           <div className="login-security-note"><Icon name="shield" size={18} /><p><strong>Đăng nhập bảo mật</strong><span>Sử dụng tài khoản được quản trị viên cấp cho bạn.</span></p></div>

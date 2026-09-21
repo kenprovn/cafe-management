@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import ConfirmDialog from "./components/common/ConfirmDialog";
 import ProductModal from "./components/common/ProductModal";
 import { ErrorState, LoadingState } from "./components/common/StateMessage";
 import Header from "./components/layout/Header";
@@ -46,6 +47,8 @@ const PAGE_DETAILS = {
   reports: { title: "Báo cáo", subtitle: "Phân tích doanh thu và hiệu quả vận hành" },
 };
 
+const productNameKey = (value) => value.trim().replace(/\s+/g, " ").normalize("NFC").toLocaleLowerCase("vi-VN");
+
 function App() {
   const [products, setProducts] = useState([]);
   const [tables, setTables] = useState([]);
@@ -65,6 +68,10 @@ function App() {
   const [formData, setFormData] = useState({ name: "", price: "" });
   const [formError, setFormError] = useState("");
   const [formLoading, setFormLoading] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [productDeleteError, setProductDeleteError] = useState("");
+  const [productDeleteLoading, setProductDeleteLoading] = useState(false);
+  const [productNotice, setProductNotice] = useState("");
   const [selectedTable, setSelectedTable] = useState(null);
   const [activeOrder, setActiveOrder] = useState(null);
   const [orderLoading, setOrderLoading] = useState(false);
@@ -72,6 +79,7 @@ function App() {
   const [tablesNotice, setTablesNotice] = useState("");
   const [dashboardSummary, setDashboardSummary] = useState({ today_revenue: 0, paid_orders_today: 0 });
   const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState("");
   const [invoices, setInvoices] = useState([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
   const [invoicesError, setInvoicesError] = useState("");
@@ -109,10 +117,12 @@ function App() {
 
   const fetchDashboard = async () => {
     setDashboardLoading(true);
+    setDashboardError("");
     try {
       setDashboardSummary(await getDashboardSummary());
     } catch (error) {
       console.error("Lỗi lấy doanh thu:", error);
+      setDashboardError(error.message || "Không thể tải doanh thu hôm nay.");
     } finally {
       setDashboardLoading(false);
     }
@@ -165,6 +175,7 @@ function App() {
       setProductsLoading(true);
       setTablesLoading(true);
       setDashboardLoading(true);
+      setDashboardError("");
       const [productResult, tableResult, dashboardResult] = await Promise.allSettled([
         getProducts(),
         getTables(),
@@ -189,6 +200,7 @@ function App() {
         setDashboardSummary(dashboardResult.value);
       } else {
         console.error("Lỗi lấy doanh thu:", dashboardResult.reason);
+        setDashboardError(dashboardResult.reason.message || "Không thể tải doanh thu hôm nay.");
       }
 
       setProductsLoading(false);
@@ -211,6 +223,7 @@ function App() {
   };
 
   const handleAdd = () => {
+    setProductNotice("");
     setEditingId(null);
     setFormData({ name: "", price: "" });
     setFormError("");
@@ -218,6 +231,7 @@ function App() {
   };
 
   const handleEdit = (product) => {
+    setProductNotice("");
     setEditingId(product.id);
     setFormData({ name: product.name, price: product.price });
     setFormError("");
@@ -238,36 +252,54 @@ function App() {
       return;
     }
     const price = Number(formData.price);
-    if (Number.isNaN(price) || price < 0) {
-      setFormError("Giá món không hợp lệ.");
+    if (!Number.isFinite(price) || price <= 0 || price > 99999999.99 || !Number.isInteger(price * 100)) {
+      setFormError("Giá bán phải lớn hơn 0 và có tối đa 2 chữ số thập phân.");
+      return;
+    }
+    const normalizedName = formData.name.trim().replace(/\s+/g, " ").normalize("NFC");
+    const duplicate = products.some((product) => product.id !== editingId && productNameKey(product.name) === productNameKey(normalizedName));
+    if (duplicate) {
+      setFormError("Tên món đã tồn tại trong thực đơn.");
       return;
     }
 
     setFormLoading(true);
     try {
       const isEditing = editingId !== null;
-      if (isEditing) await updateProduct(editingId, { name: formData.name.trim(), price });
-      else await createProduct({ name: formData.name.trim(), price });
+      if (isEditing) await updateProduct(editingId, { name: normalizedName, price });
+      else await createProduct({ name: normalizedName, price });
       setShowForm(false);
       setEditingId(null);
       setFormData({ name: "", price: "" });
       await fetchProducts();
+      setProductNotice(isEditing ? "Đã cập nhật món thành công." : "Đã thêm món mới vào thực đơn.");
     } catch (error) {
       console.error("Lỗi:", error);
-      setFormError("Không thể kết nối tới máy chủ.");
+      setFormError(error.message);
     } finally {
       setFormLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa món này không?")) return;
+  const handleDelete = (product) => {
+    setProductDeleteError("");
+    setProductNotice("");
+    setProductToDelete(product);
+  };
+
+  const confirmDeleteProduct = async () => {
+    setProductDeleteLoading(true);
+    setProductDeleteError("");
     try {
-      await deleteProduct(id);
+      await deleteProduct(productToDelete.id);
       await fetchProducts();
+      setProductNotice(`Đã xóa ${productToDelete.name} khỏi thực đơn.`);
+      setProductToDelete(null);
     } catch (error) {
       console.error("Lỗi:", error);
-      alert("Không thể kết nối tới server!");
+      setProductDeleteError(error.message);
+    } finally {
+      setProductDeleteLoading(false);
     }
   };
 
@@ -386,8 +418,8 @@ function App() {
       <div className="app-content">
         <Header title={pageDetails.title} subtitle={pageDetails.subtitle} user={user} onMenuClick={() => setSidebarOpen(true)} />
         <main className="page-content">
-          {currentPage === "dashboard" && <DashboardPage products={products} productsError={productsError} productsLoading={productsLoading} dashboardSummary={dashboardSummary} dashboardLoading={dashboardLoading} occupiedTables={occupiedTables} totalTables={tables.length} onNavigate={navigateTo} onRetryProducts={fetchProducts} canManageProducts={user.role === "admin"} />}
-          {currentPage === "products" && user.role === "admin" && <ProductsPage products={products} error={productsError} loading={productsLoading} onAdd={handleAdd} onDelete={handleDelete} onEdit={handleEdit} onRetry={fetchProducts} />}
+          {currentPage === "dashboard" && <DashboardPage products={products} productsError={productsError} productsLoading={productsLoading} dashboardSummary={dashboardSummary} dashboardLoading={dashboardLoading} dashboardError={dashboardError} occupiedTables={occupiedTables} totalTables={tables.length} onNavigate={navigateTo} onRetryProducts={fetchProducts} onRetryDashboard={fetchDashboard} canManageProducts={user.role === "admin"} />}
+          {currentPage === "products" && user.role === "admin" && <ProductsPage products={products} error={productsError} loading={productsLoading} notice={productNotice} onAdd={handleAdd} onDelete={handleDelete} onEdit={handleEdit} onRetry={fetchProducts} />}
           {currentPage === "tables" && <TablesPage tables={tables} occupiedTables={occupiedTables} error={tablesError} loading={tablesLoading} notice={tablesNotice} onRetry={fetchTables} onOpenOrder={handleOpenTable} />}
           {currentPage === "order" && selectedTable && orderLoading && <section className="panel"><LoadingState label="Đang tải đơn hàng..." /></section>}
           {currentPage === "order" && selectedTable && !orderLoading && orderError && <section className="panel"><ErrorState message={orderError} onRetry={() => handleOpenTable(selectedTable)} /></section>}
@@ -399,6 +431,7 @@ function App() {
         </main>
       </div>
       {showForm && <ProductModal editing={editingId !== null} error={formError} formData={formData} loading={formLoading} onChange={(event) => setFormData({ ...formData, [event.target.name]: event.target.value })} onClose={closeForm} onSubmit={handleSubmit} />}
+      {productToDelete && <ConfirmDialog title="Xóa món khỏi thực đơn?" message={`Bạn sắp xóa ${productToDelete.name}. Các hóa đơn cũ vẫn giữ nguyên tên và giá món đã bán.`} confirmLabel="Xóa món" tone="danger" loading={productDeleteLoading} error={productDeleteError} onCancel={() => { if (!productDeleteLoading) { setProductToDelete(null); setProductDeleteError(""); } }} onConfirm={confirmDeleteProduct} />}
     </div>
   );
 }

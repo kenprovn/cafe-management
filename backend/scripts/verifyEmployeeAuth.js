@@ -36,8 +36,16 @@ function hasPasswordField(value) {
 
 async function run() {
   const pool = db.promise();
-  const adminLoginA = await signIn("admin", "admin123");
-  const staffLogin = await signIn("nhanvien", "123456");
+  const adminUsername = process.env.VERIFY_ADMIN_USERNAME;
+  const adminPassword = process.env.VERIFY_ADMIN_PASSWORD;
+  const staffUsername = process.env.VERIFY_STAFF_USERNAME;
+  const staffPassword = process.env.VERIFY_STAFF_PASSWORD;
+  if (!adminUsername || !adminPassword || !staffUsername || !staffPassword) {
+    throw new Error("Set VERIFY_ADMIN_USERNAME, VERIFY_ADMIN_PASSWORD, VERIFY_STAFF_USERNAME, and VERIFY_STAFF_PASSWORD before running this script");
+  }
+
+  const adminLoginA = await signIn(adminUsername, adminPassword);
+  const staffLogin = await signIn(staffUsername, staffPassword);
   check("existing admin login", adminLoginA.status === 200);
   check("existing staff login", staffLogin.status === 200);
   const admin = adminLoginA.data.user;
@@ -53,7 +61,7 @@ async function run() {
   const restored = await api("/auth/me", { token: adminTokenA });
   check("session restoration", restored.status === 200 && restored.data.user.id === admin.id);
 
-  const adminLoginB = await signIn("admin", "admin123");
+  const adminLoginB = await signIn(adminUsername, adminPassword);
   check("second admin session", adminLoginB.status === 200);
   const adminToken = adminLoginB.data.token;
   const logout = await api("/auth/logout", { token: adminTokenA, method: "POST" });
